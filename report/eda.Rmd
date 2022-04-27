@@ -29,7 +29,9 @@ Sion_series <- series %>% purrr::keep(names(.) %in% c(
 
 #### **Table 2 - **
 ```{r echo=FALSE, message=FALSE}
-
+Sion_series$Bietschhorn %>% select(-name) %>%
+  melt(id = "date") %>%
+  ggplot(aes(x=date,y=value,colour=variable,group=variable)) + geom_line()
 ```
 
 #### **Table 3 - **
