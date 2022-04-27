@@ -1,30 +1,31 @@
----
-title: "data"
-author: "Yooby"
-date: "4/27/2022"
-output: html_document
----
+## Data
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, echo = FALSE, message = FALSE, warning=FALSE}
+source(here::here("scripts/setup.R"))
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+# Download the dataset
+setwd(here::here("data/"))
+bikesharing <- load(here::here("data/Bikesharing_dataset.Rdata"))
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+# Creation of time series
+Bietschhorn <- as_tsibble(series$Bietschhorn)
+Blancherie <- as_tsibble(series$Blancherie)
+Cible <- as_tsibble(series$Cible)
+GSD <- as_tsibble(series$`Gare de Sion Sud`)
+PRP <- as_tsibble(series$`P+R Potences`)
+Platta <- as_tsibble(series$Platta)
+Planta <- as_tsibble(series$Planta)
+CRR <- as_tsibble(series$`Hôpital - CRR`)
+Campus <- as_tsibble(series$`Campus Energypolis`)
+Scex <- as_tsibble(series$Scex)
+Furet <- as_tsibble(series$`Châteauneuf-Furet`)
+Agasse <- as_tsibble(series$Agasse)
+Stade <- as_tsibble(series$`P+R Stade`)
+GSN <- as_tsibble(series$`Gare de Sion Nord`)
+Stand <- as_tsibble(series$`Ancien Stand`)
+Bramois <- as_tsibble(series$`UNIL/UNIGE Bramois`)
 ```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

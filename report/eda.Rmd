@@ -1,44 +1,10 @@
 ## EDA
 
-
 ```{r, echo = FALSE, message = FALSE, warning=FALSE}
 source(here::here("scripts/setup.R"))
 ```
 
-### **Data Description**
+#### Side notes
 
-
-#### **Table 1 - **
-```{r echo=FALSE, message=FALSE}
-bikesharing <- load(here::here("data/Bikesharing_dataset.Rdata"))
-
-Sion_metadata <- metadata %>% filter(city == "Sion")
-Sion_metadata$name
-
-Sion_series <- series %>% purrr::keep(names(.) %in% c(
-  "Bietschhorn", "Blancherie", "Cible", "Gare de Sion Sud", "P+R Potences",
-  "Platta", "Hôpital - CRR", "Campus Energypolis", "Scex", "Châteauneuf-Furet",
-  "Agasse", "Planta", "P+R Stade", "Gare de Sion Nord", "Ancien Stand",
-  "UNIL/UNIGE Bramois", "Planta", "Hôpital - CRR",  "Gare de Sion Sud",
-  "P+R Potences", "Bietschhorn", "Scex", "Châteauneuf-Furet",  "Agasse",
-  "Cible", "Platta", "Gare de Sion Nord", "Ancien Stand"))
-
-
-
-```
-
-#### **Table 2 - **
-```{r echo=FALSE, message=FALSE}
-
-```
-
-#### **Table 3 - **
-```{r echo=FALSE, message=FALSE}
-
-```
-
-#### **Table 4 - **
-```{r echo=FALSE, message=FALSE}
-
-```
+Interestingly, the date is irregular, sometimes it's every 1 hour, then every 10 minutes, then 20 minutes etc. How to deal with that?
 
