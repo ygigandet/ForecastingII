@@ -6,12 +6,12 @@
 packages <- c(
   "here", # for the project's organization
   "tidyverse", "lubridate", "car", "tidyquant", # for wrangling
-  "ggrepel", "gghighlight", "patchwork", "maps", "scales", "rworldmap", "RColorBrewer",
+  "ggrepel", "gghighlight", "patchwork", "maps", "scales", "RColorBrewer",
   "cowplot", "plotly", "dygraphs", "xts", "highcharter", "ggthemes", "corrplot",
   "GGally", "ggcorrplot", "DataExplorer", "inspectdf", # for plotting
   "knitr", "kableExtra", "bookdown", "rmarkdown", "bslib",  # for the report
   "olsrr", "psych", "stargazer", "DT", "Hmisc", "psych",  # for the analysis
-  "fpp3", "tsibbledata", "flexatable", "readxl" # fot time series
+  "fpp3", "tsibbledata", "readxl" # fot time series
 )
 purrr::walk(packages, library, character.only = TRUE) 
 
