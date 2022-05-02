@@ -4,10 +4,30 @@
 source(here::here("scripts/setup.R"))
 ```
 
+```{r}
+# Creation of time series
+Bietschhorn <- as_tsibble(Bietschhorn)
+Blancherie <- as_tsibble(Blancherie)
+Cible <- as_tsibble(Cible)
+GSD <- as_tsibble(GSD)
+PRP <- as_tsibble(PRP)
+Platta <- as_tsibble(Platta)
+Planta <- as_tsibble(Planta)
+CRR <- as_tsibble(CRR)
+Campus <- as_tsibble(Campus)
+Scex <- as_tsibble(Scex)
+Furet <- as_tsibble(Furet)
+Agasse <- as_tsibble(Agasse)
+Stade <- as_tsibble(Stade)
+GSN <- as_tsibble(GSN)
+Stand <- as_tsibble(Stand)
+Bramois <- as_tsibble(Bramois)
+```
+
 ### **Data Description**
 
 #### **Table 1 - **
 ```{r echo=FALSE, message=FALSE}
 Bietschhorn %>% select(-name) %>%
-  autoplot()
+  autoplot(Bike)
 ```
