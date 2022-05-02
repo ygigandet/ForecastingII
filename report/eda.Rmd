@@ -28,6 +28,53 @@ Bramois <- as_tsibble(Bramois)
 
 #### **Table 1 - **
 ```{r echo=FALSE, message=FALSE}
-Bietschhorn %>% select(-name) %>%
-  autoplot(Bike)
+#
+Bietschhorn %>% 
+  autoplot()
+
+Blancherie %>% 
+  autoplot()
+
+Cible %>% 
+  autoplot()
+
+GSD %>% 
+  autoplot()
+
+PRP %>% 
+  autoplot()
+
+Platta %>% 
+  autoplot()
+
+Planta %>% 
+  autoplot()
+
+CRR %>% 
+  autoplot()
+
+Campus %>% 
+  autoplot()
+
+Scex %>% 
+  autoplot()
+
+Furet %>% 
+  autoplot()
+
+Agasse %>% 
+  autoplot()
+
+Stade %>% 
+  autoplot()
+
+GSN %>% 
+  autoplot()
+
+Stand %>% 
+  autoplot()
+
+Bramois %>% 
+  autoplot()
+```
 ```
