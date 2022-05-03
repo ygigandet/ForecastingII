@@ -26,55 +26,53 @@ Bramois <- as_tsibble(Bramois)
 
 ### **Data Description**
 
-#### **Table 1 - **
+#### **Blancherie **
 ```{r echo=FALSE, message=FALSE}
-#
-Bietschhorn %>% 
-  autoplot()
+Blancherie <- as_tsibble(Blancherie)
+weekday <- weekdays(Blancherie$date)
+Blancherie$weekday <- weekday # Get the weekday values
+Blancherie$time <- as.POSIXct(Blancherie$date, format = "%H:%M:%S %p")
+Blancherie$time <- as.numeric(Blancherie$date) #convert date values to numeric
+as.numeric(Blancherie$time)
 
-Blancherie %>% 
-  autoplot()
+blancherie <- Blancherie %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+blancherie$minutes <- as.numeric(as.character(blancherie$minutes))/60 # transform to minutes
+blancherie$minutes[blancherie$minutes == 0] <- blancherie$minutes[2] 
+blancherie_ts <- blancherie %>%
+  relocate(date, .before = Bike) %>%
+    select(-time,-name)
 
-Cible %>% 
-  autoplot()
+blancherie_monday <- blancherie_ts %>% 
+  filter(weekday == "lunes")
+unique(blancherie_monday[c("minutes")]) # Identify the unique values of a column
 
-GSD %>% 
-  autoplot()
+############### Monday
+#  convert our data frame from wide to long format.
+blancherie <- blancherie_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
 
-PRP %>% 
-  autoplot()
+# Plot Multiple Series On Same Axes for Monday
+blancherie %>% filter(weekday == "lunes") %>%
+  filter(minutes == 60) %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date[60m]") + ylab("Amount of Bikes") +
+  ggtitle("Frequencies of usage on Monday")
 
-Platta %>% 
-  autoplot()
+############### Tuesday
+blancherie_tuesday <- blancherie_ts %>% 
+  filter(weekday == "martes")
+unique(blancherie_tuesday[c("minutes")]) # Identify the unique values of a column
 
-Planta %>% 
-  autoplot()
+# Plot Multiple Series On Same Axes for Tuesday
+blancherie %>% filter(weekday == "martes") %>%
+  filter(minutes == 60) %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date[60m]") + ylab("Amount of Bikes") +
+  ggtitle("Frequencies of usage on Monday")
 
-CRR %>% 
-  autoplot()
-
-Campus %>% 
-  autoplot()
-
-Scex %>% 
-  autoplot()
-
-Furet %>% 
-  autoplot()
-
-Agasse %>% 
-  autoplot()
-
-Stade %>% 
-  autoplot()
-
-GSN %>% 
-  autoplot()
-
-Stand %>% 
-  autoplot()
-
-Bramois %>% 
-  autoplot()
-```
 ```
