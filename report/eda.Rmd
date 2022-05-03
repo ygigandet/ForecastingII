@@ -252,3 +252,53 @@ p3 <- bietschhorn %>% filter(weekday == "Tuesday") %>%
   xlab("Date[60min]") + ylab("Amount of Bikes")
 p1 /(p2 | p3) #needs library patchwork
 ```
+
+```{r echo=FALSE, message=FALSE}
+# Same analysis for Gare de Sion Nord (GSN) on Monday
+GSN <- as_tsibble(GSN)
+weekday <- weekdays(GSN$date)
+GSN$weekday <- weekday # Get the weekday values
+GSN$time <- as.POSIXct(GSN$date, format = "%H:%M:%S %p")
+GSN$time <- as.numeric(GSN$date) #convert date values to numeric
+as.numeric(GSN$time)
+
+gsn <- GSN %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+gsn$minutes <- as.numeric(as.character(gsn$minutes))/60 # transform to minutes
+gsn$minutes[gsn$minutes == 0] <- gsn$minutes[2] 
+gsn_ts <- gsn %>%
+  relocate(date, .before = Bike) %>%
+    select(-time,-name)
+
+#  convert our data frame from wide to long format.
+gsn <- gsn_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+
+############### Monday
+gsn_1 <- gsn_ts %>% 
+  filter(weekday == "Monday")
+unique(gsn_1[c("minutes")]) # Identify the unique values of a column
+# The value with a diff time of; 120 only have one observation
+
+# Plot Multiple Series On Same Axes for Monday
+p1 <- gsn %>% filter(weekday == "Monday") %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date") + ylab("Amount of Bikes") +
+  ggtitle("Frequencies of usage on Monday")
+
+p2 <- gsn %>% filter(weekday == "Monday") %>%
+  filter(minutes == 10) %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date[10min]") + ylab("Amount of Bikes")
+
+p3 <- gsn %>% filter(weekday == "Monday") %>%
+  filter(minutes == 60) %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date[60min]") + ylab("Amount of Bikes")
+p1 /(p2 | p3) #needs library patchwork
+```
