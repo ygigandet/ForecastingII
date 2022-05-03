@@ -175,3 +175,80 @@ p3 <- blancherie %>% filter(weekday == "Friday") %>%
   xlab("Date[60min]") + ylab("Amount of Bikes")
 p1 /(p2 | p3) #needs library patchwork
 ```
+
+```{r echo=FALSE, message=FALSE}
+# Same analysis for Bietschhorn on Monday
+Bietschhorn <- as_tsibble(Bietschhorn)
+weekday <- weekdays(Bietschhorn$date)
+Bietschhorn$weekday <- weekday # Get the weekday values
+Bietschhorn$time <- as.POSIXct(Bietschhorn$date, format = "%H:%M:%S %p")
+Bietschhorn$time <- as.numeric(Bietschhorn$date) #convert date values to numeric
+as.numeric(Bietschhorn$time)
+
+bietschhorn <- Bietschhorn %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+bietschhorn$minutes <- as.numeric(as.character(bietschhorn$minutes))/60 # transform to minutes
+bietschhorn$minutes[bietschhorn$minutes == 0] <- bietschhorn$minutes[2] 
+bietschhorn_ts <- bietschhorn %>%
+  relocate(date, .before = Bike) %>%
+    select(-time,-name)
+
+#  convert our data frame from wide to long format.
+bietschhorn <- bietschhorn_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+
+############### Monday
+bietschhorn_1 <- bietschhorn_ts %>% 
+  filter(weekday == "Monday")
+unique(bietschhorn_1[c("minutes")]) # Identify the unique values of a column
+# The value with a diff time of; 120 only have one observation
+
+# Plot Multiple Series On Same Axes for Monday
+p1 <- bietschhorn %>% filter(weekday == "Monday") %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date") + ylab("Amount of Bikes") +
+  ggtitle("Frequencies of usage on Monday")
+
+p2 <- bietschhorn %>% filter(weekday == "Monday") %>%
+  filter(minutes == 10) %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date[10min]") + ylab("Amount of Bikes")
+
+p3 <- bietschhorn %>% filter(weekday == "Monday") %>%
+  filter(minutes == 60) %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date[60min]") + ylab("Amount of Bikes")
+p1 /(p2 | p3) #needs library patchwork
+```
+
+```{r echo=FALSE, message=FALSE}
+############### Tuesday
+bietschhorn_2 <- bietschhorn_ts %>% 
+  filter(weekday == "Tuesday")
+unique(bietschhorn_2[c("minutes")]) # Identify the unique values of a column
+
+# Plot Multiple Series On Same Axes for Tuesday
+p1 <- bietschhorn %>% filter(weekday == "Tuesday") %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date") + ylab("Amount of Bikes") +
+  ggtitle("Frequencies of usage on Tuesday")
+
+p2 <- bietschhorn %>% filter(weekday == "Tuesday") %>%
+  filter(minutes == 10) %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date[10min]") + ylab("Amount of Bikes")
+
+p3 <- bietschhorn %>% filter(weekday == "Tuesday") %>%
+  filter(minutes == 60) %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date[60min]") + ylab("Amount of Bikes")
+p1 /(p2 | p3) #needs library patchwork
+```
