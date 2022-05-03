@@ -7,7 +7,6 @@ source(here::here("scripts/setup.R"))
 ```{r}
 # Creation of time series
 Bietschhorn <- as_tsibble(Bietschhorn)
-
 Cible <- as_tsibble(Cible)
 GSD <- as_tsibble(GSD)
 PRP <- as_tsibble(PRP)
@@ -51,24 +50,24 @@ blancherie <- blancherie_ts %>%
 
 ############### Monday
 blancherie_1 <- blancherie_ts %>% 
-  filter(weekday == "lunes")
+  filter(weekday == "Monday")
 unique(blancherie_1[c("minutes")]) # Identify the unique values of a column
 # The value with a diff time of; 120 only have one observation
 
 # Plot Multiple Series On Same Axes for Monday
-p1 <- blancherie %>% filter(weekday == "lunes") %>%
+p1 <- blancherie %>% filter(weekday == "Monday") %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
   xlab("Date") + ylab("Amount of Bikes") +
   ggtitle("Frequencies of usage on Monday")
 
-p2 <- blancherie %>% filter(weekday == "lunes") %>%
+p2 <- blancherie %>% filter(weekday == "Monday") %>%
   filter(minutes == 10) %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
   xlab("Date[10min]") + ylab("Amount of Bikes")
 
-p3 <- blancherie %>% filter(weekday == "lunes") %>%
+p3 <- blancherie %>% filter(weekday == "Monday") %>%
   filter(minutes == 60) %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
@@ -82,23 +81,23 @@ For the minute values that have only one observation, like the observation with 
 ```{r echo=FALSE, message=FALSE}
 ############### Tuesday
 blancherie_2 <- blancherie_ts %>% 
-  filter(weekday == "martes")
+  filter(weekday == "Tuesday")
 unique(blancherie_2[c("minutes")]) # Identify the unique values of a column
 
 # Plot Multiple Series On Same Axes for Tuesday
-p1 <- blancherie %>% filter(weekday == "martes") %>%
+p1 <- blancherie %>% filter(weekday == "Tuesday") %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
   xlab("Date") + ylab("Amount of Bikes") +
   ggtitle("Frequencies of usage on Tuesday")
 
-p2 <- blancherie %>% filter(weekday == "martes") %>%
+p2 <- blancherie %>% filter(weekday == "Tuesday") %>%
   filter(minutes == 10) %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
   xlab("Date[10min]") + ylab("Amount of Bikes")
 
-p3 <- blancherie %>% filter(weekday == "martes") %>%
+p3 <- blancherie %>% filter(weekday == "Tuesday") %>%
   filter(minutes == 60) %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
@@ -110,24 +109,24 @@ p1 /(p2 | p3) #needs library patchwork
 ```{r echo=FALSE, message=FALSE}
 ############### Wednesday
 blancherie_3 <- blancherie_ts %>% 
-  filter(weekday == "miércoles")
+  filter(weekday == "Wednesday")
 unique(blancherie_3[c("minutes")]) # Identify the unique values of a column
 # The values with a diff time of; 20,30 and 40 only have one observation
 
 # Plot Multiple Series On Same Axes for Wednesday
-p1 <- blancherie %>% filter(weekday == "miércoles") %>%
+p1 <- blancherie %>% filter(weekday == "Wednesday") %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
   xlab("Date") + ylab("Amount of Bikes") +
   ggtitle("Frequencies of usage on Wednesday")
 
-p2 <- blancherie %>% filter(weekday == "miércoles") %>%
+p2 <- blancherie %>% filter(weekday == "Wednesday") %>%
   filter(minutes == 10) %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
   xlab("Date[10min]") + ylab("Amount of Bikes")
 
-p3 <- blancherie %>% filter(weekday == "miércoles") %>%
+p3 <- blancherie %>% filter(weekday == "Wednesday") %>%
   filter(minutes == 60) %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
@@ -139,12 +138,12 @@ For the minute values that have only one observation, like the observations with
 ```{r echo=FALSE, message=FALSE}
 ############### Thursday
 blancherie_4 <- blancherie_ts %>% 
-  filter(weekday == "jueves")
+  filter(weekday == "Thursday")
 unique(blancherie_4[c("minutes")]) # Identify the unique values of a column
 # The values with a diff time of; 20,30 and 40 only have one observation
 
 # Plot Multiple Series On Same Axes for Wednesday
-blancherie %>% filter(weekday == "jueves") %>%
+blancherie %>% filter(weekday == "Thursday") %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
   xlab("Date[10min]") + ylab("Amount of Bikes") +
@@ -152,24 +151,24 @@ blancherie %>% filter(weekday == "jueves") %>%
 
 ############### Friday
 blancherie_5 <- blancherie_ts %>% 
-  filter(weekday == "viernes")
+  filter(weekday == "Friday")
 unique(blancherie_5[c("minutes")]) # Identify the unique values of a column
 # The values with a diff time of; 20,30 and 40 only have one observation
 
 # Plot Multiple Series On Same Axes for Wednesday
-p1 <- blancherie %>% filter(weekday == "viernes") %>%
+p1 <- blancherie %>% filter(weekday == "Friday") %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
   xlab("Date") + ylab("Amount of Bikes") +
   ggtitle("Frequencies of usage on Friday")
 
-p2 <- blancherie %>% filter(weekday == "viernes") %>%
+p2 <- blancherie %>% filter(weekday == "Friday") %>%
   filter(minutes == 10) %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
   xlab("Date[10min]") + ylab("Amount of Bikes")
 
-p3 <- blancherie %>% filter(weekday == "viernes") %>%
+p3 <- blancherie %>% filter(weekday == "Friday") %>%
   filter(minutes == 60) %>%
   select(-weekday, -minutes) %>%
   autoplot(Number) +
