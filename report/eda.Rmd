@@ -7,7 +7,7 @@ source(here::here("scripts/setup.R"))
 ```{r}
 # Creation of time series
 Bietschhorn <- as_tsibble(Bietschhorn)
-Blancherie <- as_tsibble(Blancherie)
+
 Cible <- as_tsibble(Cible)
 GSD <- as_tsibble(GSD)
 PRP <- as_tsibble(PRP)
@@ -43,16 +43,16 @@ blancherie_ts <- blancherie %>%
   relocate(date, .before = Bike) %>%
     select(-time,-name)
 
-blancherie_monday <- blancherie_ts %>% 
-  filter(weekday == "lunes")
-unique(blancherie_monday[c("minutes")]) # Identify the unique values of a column
-
-############### Monday
 #  convert our data frame from wide to long format.
 blancherie <- blancherie_ts %>% 
   gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
   relocate(Types, .before = weekday) %>%
   relocate(Number, .before = weekday)
+
+############### Monday
+blancherie_monday <- blancherie_ts %>% 
+  filter(weekday == "lunes")
+unique(blancherie_monday[c("minutes")]) # Identify the unique values of a column
 
 # Plot Multiple Series On Same Axes for Monday
 blancherie %>% filter(weekday == "lunes") %>%
