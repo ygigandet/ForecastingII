@@ -5,198 +5,14 @@ source(here::here("scripts/setup.R"))
 ```
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-# Creation of time series
-Bietschhorn <- as_tsibble(Bietschhorn)
-Blancherie <- as_tsibble(Blancherie)
-Cible <- as_tsibble(Cible)
-GSD <- as_tsibble(GSD)
-PRP <- as_tsibble(PRP)
-Platta <- as_tsibble(Platta)
-Planta <- as_tsibble(Planta)
-CRR <- as_tsibble(CRR)
-Campus <- as_tsibble(Campus)
-Scex <- as_tsibble(Scex)
-Furet <- as_tsibble(Furet)
-Agasse <- as_tsibble(Agasse)
-Stade <- as_tsibble(Stade)
-GSN <- as_tsibble(GSN)
-Stand <- as_tsibble(Stand)
-Bramois <- as_tsibble(Bramois)
+# Setting the functions to local environment "English" 
 Sys.setlocale("LC_TIME", "C")
 ```
 
-#### **Blancherie **
-```{r message=FALSE, warning=FALSE, include=FALSE}
-Blancherie <- as_tsibble(Blancherie)
-weekday <- weekdays(Blancherie$date)
-Blancherie$weekday <- weekday # Get the weekday values
-Blancherie$time <- as.POSIXct(Blancherie$date, format = "%H:%M:%S %p")
-Blancherie$time <- as.numeric(Blancherie$date) #convert date values to numeric
-as.numeric(Blancherie$time)
-
-blancherie <- Blancherie %>% 
-  mutate(minutes = time - lag(time, default = first(time))) # subtract days
-blancherie$minutes <- as.numeric(as.character(blancherie$minutes))/60 # transform to minutes
-blancherie$minutes[blancherie$minutes == 0] <- blancherie$minutes[2] 
-blancherie_ts <- blancherie %>%
-  relocate(date, .before = Bike) %>%
-    select(-time,-name)
-
-#  convert our data frame from wide to long format.
-blancherie <- blancherie_ts %>% 
-  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
-  relocate(Types, .before = weekday) %>%
-  relocate(Number, .before = weekday)
-```
-
-```{r, echo=FALSE, message=FALSE}
-# Create table of Usage
-blancherie %>% 
-  select(-weekday, -minutes) %>%
-  autoplot(Number) +
-  xlab("Date") + ylab("Number of bike") +
-  ggtitle("Usage frequencies in Blancherie")
-```
-
-We note from the data sets that the time differences in a day are generally divided by 10 and 60 minutes, which is why we have considered dividing it by blocks of time difference per day, so we could interpret the usage patterns more easily. 
-
-```{r, echo=FALSE, message=FALSE}
-# Plotting from Monday till Wednesday every 10 min difference
-blacherie123_10 <- blancherie %>% 
-  filter(weekday == "Monday" |weekday == "Tuesday" | 
-           weekday == "Wednesday") %>%
-  filter(minutes == 10)
-
-# plot the data
-qplot(date, Number, data = blacherie123_10, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-
-# Plotting from Thursday till Sunday every 10 min difference
-blacherie4567_10 <- blancherie %>% 
-  filter(weekday == "Thursday" |weekday == "Friday" | 
-           weekday == "Saturday" | weekday == "Sunday") %>%
-  filter(minutes == 10)
-
-# plot the data
-qplot(date, Number, data = blacherie4567_10, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-```
-
-Monday - One obs with 120 min diff... previous obs have the same amount of types of bikes
-```{r, echo=FALSE, message=FALSE}
-blancherie_1 <- blancherie_ts %>% 
-  filter(weekday == "Monday")
-unique(blancherie_1[c("minutes")]) # Identify the unique values of a column
-# The value with a diff time of; 120 only have one observation
-```
-
-Wednesday - The Observations with time difference as 40, 30 & 20min are only repeated once on this day.
-
-```{r, echo=FALSE, message=FALSE}
-blancherie_3 <- blancherie_ts %>% 
-  filter(weekday == "Wednesday")
-unique(blancherie_3[c("minutes")]) # Identify the unique values of a column
-# The values with a diff time of; 20,30 and 40 only have one observation
-```
-
-Sunday - One obs with 70 min diff... previous and following obs have the same amount of types of bikes
-```{r, echo=FALSE, message=FALSE}
-blancherie_7 <- blancherie_ts %>% 
-  filter(weekday == "Sunday")
-unique(blancherie_7[c("minutes")]) # Identify the unique values of a column
-```
-
-```{r, echo=FALSE, message=FALSE}
-# Plotting from Monday till Wednesday every 60 min difference
-blacherie123_60 <- blancherie %>% 
-  filter(weekday == "Monday" |weekday == "Tuesday" | 
-           weekday == "Wednesday") %>%
-  filter(minutes == 60)
-
-# plot the data
-qplot(date, Number, data = blacherie123_60, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [60 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-
-# Plotting from Thursday till Sunday every 60 min difference
-blacherie4567_60 <- blancherie %>% 
-  filter(weekday == "Thursday" |weekday == "Friday" | 
-           weekday == "Saturday" | weekday == "Sunday") %>%
-  filter(minutes == 60)
-
-# plot the data
-qplot(date, Number, data = blacherie4567_60, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [60 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-```
-
-We can observe on the previous graph that Thursday is missing, it is because the daily time series is divided only by 10 minutes difference.
-
-> Graphs with 10 and 60 minutes difference
-
-```{r, echo=FALSE, message=FALSE}
-# Plot the complete week by 10 minute periods
-blacherie_10 <- blancherie %>% 
-  filter(minutes == 10)
-# plot the data
-p1 <- blacherie_10 %>%
-  autoplot(Number) +
-  xlab("Date [10 min]") + ylab("Number of bike") +
-  ggtitle("Usage frequencies in Blancherie")
-
-# Plot the complete week by 1hour periods
-blacherie_60 <- blancherie %>% 
-  filter(minutes == 60)
-# plot the data
-p2 <-blacherie_60 %>%
-  autoplot(Number) +
-  xlab("Date [60 min]") + ylab("Number of bike")
-p1 / p2
-```
-
-```{r message=FALSE, include=FALSE}
-############### Monday #######################
-blancherie_1 <- blancherie_ts %>% 
-  filter(weekday == "Monday")
-unique(blancherie_1[c("minutes")]) # Identify the unique values of a column
-# The value with a diff time of; 120 only have one observation
-
-blancherie_2 <- blancherie_ts %>% 
-  filter(weekday == "Tuesday")
-unique(blancherie_2[c("minutes")]) # Identify the unique values of a column
-
-blancherie_3 <- blancherie_ts %>% 
-  filter(weekday == "Wednesday")
-unique(blancherie_3[c("minutes")]) # Identify the unique values of a column
-# The values with a diff time of; 20,30 and 40 only have one observation
-
-blancherie_4 <- blancherie_ts %>% 
-  filter(weekday == "Thursday")
-unique(blancherie_4[c("minutes")]) # Identify the unique values of a column
-
-blancherie_5 <- blancherie_ts %>% 
-  filter(weekday == "Friday")
-unique(blancherie_5[c("minutes")]) # Identify the unique values of a column
-
-blancherie_6 <- blancherie_ts %>% 
-  filter(weekday == "Saturday")
-unique(blancherie_6[c("minutes")]) # Identify the unique values of a column
-
-blancherie_7 <- blancherie_ts %>% 
-  filter(weekday == "Sunday")
-unique(blancherie_7[c("minutes")]) # Identify the unique values of a column
-```
-
-#### **Bietschhorn **
+#### **Bietschhorn Station**
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-# Same analysis for Bietschhorn on Monday
+# Creation of time series
 Bietschhorn <- as_tsibble(Bietschhorn)
 weekday <- weekdays(Bietschhorn$date)
 Bietschhorn$weekday <- weekday # Get the weekday values
@@ -207,10 +23,22 @@ as.numeric(Bietschhorn$time)
 bietschhorn <- Bietschhorn %>% 
   mutate(minutes = time - lag(time, default = first(time))) # subtract days
 bietschhorn$minutes <- as.numeric(as.character(bietschhorn$minutes))/60 # transform to minutes
-bietschhorn$minutes[bietschhorn$minutes == 0] <- bietschhorn$minutes[2] 
+
+# Filter the data by time difference of 10 min
+bietschhorn <- bietschhorn %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+bietschhorn.gaps <- has_gaps(bietschhorn)
+bietschhorn.gaps <- scan_gaps(bietschhorn)
+bietschhorn <- bietschhorn %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
 bietschhorn_ts <- bietschhorn %>%
-  relocate(date, .before = Bike) %>%
-    select(-time,-name)
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(bietschhorn_ts) # no missing values
 
 #  convert our data frame from wide to long format.
 bietschhorn <- bietschhorn_ts %>% 
@@ -219,65 +47,750 @@ bietschhorn <- bietschhorn_ts %>%
   relocate(Number, .before = weekday)
 ```
 
-```{r echo=FALSE, message=FALSE}
-############### Monday
-bietschhorn_1 <- bietschhorn_ts %>% 
-  filter(weekday == "Monday")
-unique(bietschhorn_1[c("minutes")]) # Identify the unique values of a column
-# The value with a diff time of; 120 only have one observation
 
-# Plot Multiple Series On Same Axes for Monday
-p1 <- bietschhorn %>% filter(weekday == "Monday") %>%
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+bietschhorn %>% 
   select(-weekday, -minutes) %>%
   autoplot(Number) +
-  xlab("Date") + ylab("Amount of Bikes") +
-  ggtitle("Frequencies of usage on Monday")
-
-p2 <- bietschhorn %>% filter(weekday == "Monday") %>%
-  filter(minutes == 10) %>%
-  select(-weekday, -minutes) %>%
-  autoplot(Number) +
-  xlab("Date[10min]") + ylab("Amount of Bikes")
-
-p3 <- bietschhorn %>% filter(weekday == "Monday") %>%
-  filter(minutes == 60) %>%
-  select(-weekday, -minutes) %>%
-  autoplot(Number) +
-  xlab("Date[60min]") + ylab("Amount of Bikes")
-p1 /(p2 | p3) #needs library patchwork
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Bietschhorn station")
 ```
 
-```{r echo=FALSE, message=FALSE}
-############### Tuesday
-bietschhorn_2 <- bietschhorn_ts %>% 
-  filter(weekday == "Tuesday")
-unique(bietschhorn_2[c("minutes")]) # Identify the unique values of a column
 
-# Plot Multiple Series On Same Axes for Tuesday
-p1 <- bietschhorn %>% filter(weekday == "Tuesday") %>%
-  select(-weekday, -minutes) %>%
-  autoplot(Number) +
-  xlab("Date") + ylab("Amount of Bikes") +
-  ggtitle("Frequencies of usage on Tuesday")
+```{r, echo=FALSE, message=FALSE}
+# Plotting from Monday till Wednesday 
+bietschhorn123 <- bietschhorn %>% 
+  filter(weekday == "Monday" |weekday == "Tuesday" | 
+           weekday == "Wednesday")
 
-p2 <- bietschhorn %>% filter(weekday == "Tuesday") %>%
-  filter(minutes == 10) %>%
-  select(-weekday, -minutes) %>%
-  autoplot(Number) +
-  xlab("Date[10min]") + ylab("Amount of Bikes")
+# plot the data
+qplot(date, Number, data = bietschhorn123, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
 
-p3 <- bietschhorn %>% filter(weekday == "Tuesday") %>%
-  filter(minutes == 60) %>%
-  select(-weekday, -minutes) %>%
-  autoplot(Number) +
-  xlab("Date[60min]") + ylab("Amount of Bikes")
-p1 /(p2 | p3) #needs library patchwork
+# Plotting from Thursday till Sunday 
+bietschhorn4567 <- bietschhorn %>% 
+  filter(weekday == "Thursday" |weekday == "Friday" | 
+           weekday == "Saturday" | weekday == "Sunday")
+
+# plot the data
+qplot(date, Number, data = bietschhorn4567, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
 ```
 
-#### **Gare de Sion Nord (GSN) **
+#### **Blancherie Station **
+
+We note from the data sets that the time differences in a day are generally divided by 10 and 60 minutes, which is why we have considered dividing it by blocks of time difference per day, so we could interpret the usage patterns more easily. 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-# Same analysis for Gare de Sion Nord (GSN) on Monday
+# Creation of time series
+Blancherie <- as_tsibble(Blancherie)
+weekday <- weekdays(Blancherie$date)
+Blancherie$weekday <- weekday # Get the weekday values
+Blancherie$time <- as.POSIXct(Blancherie$date, format = "%H:%M:%S %p")
+Blancherie$time <- as.numeric(Blancherie$date) #convert date values to numeric
+as.numeric(Blancherie$time)
+
+blancherie <- Blancherie %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+blancherie$minutes <- as.numeric(as.character(blancherie$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+blancherie <- blancherie %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+blancherie.gaps <- has_gaps(blancherie)
+blancherie.gaps <- scan_gaps(blancherie)
+blancherie <- blancherie %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+blancherie_ts <- blancherie %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(blancherie_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+blancherie <- blancherie_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+blancherie %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Blancherie station")
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Plotting from Monday till Wednesday 
+blacherie123 <- blancherie %>% 
+  filter(weekday == "Monday" |weekday == "Tuesday" | 
+           weekday == "Wednesday")
+
+# plot the data
+qplot(date, Number, data = blacherie123, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
+
+# Plotting from Thursday till Sunday 
+blacherie4567 <- blancherie %>% 
+  filter(weekday == "Thursday" |weekday == "Friday" | 
+           weekday == "Saturday" | weekday == "Sunday")
+
+# plot the data
+qplot(date, Number, data = blacherie4567, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
+#unique(blancherie_1[c("minutes")])
+```
+
+#### **Cible Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Cible <- as_tsibble(Cible)
+weekday <- weekdays(Cible$date)
+Cible$weekday <- weekday # Get the weekday values
+Cible$time <- as.POSIXct(Cible$date, format = "%H:%M:%S %p")
+Cible$time <- as.numeric(Cible$date) #convert date values to numeric
+as.numeric(Cible$time)
+
+cible <- Cible %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+cible$minutes <- as.numeric(as.character(cible$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+cible <- cible %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+cible.gaps <- has_gaps(cible)
+cible.gaps <- scan_gaps(cible)
+cible <- cible %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+cible_ts <- cible %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(cible_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+cible <- cible_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+cible %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Cible station")
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Plotting from Monday till Wednesday 
+cible123 <- cible %>% 
+  filter(weekday == "Monday" |weekday == "Tuesday" | 
+           weekday == "Wednesday")
+
+# plot the data
+qplot(date, Number, data = cible123, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
+
+# Plotting from Thursday till Sunday 
+cible4567 <- cible %>% 
+  filter(weekday == "Thursday" |weekday == "Friday" | 
+           weekday == "Saturday" | weekday == "Sunday")
+
+# plot the data
+qplot(date, Number, data = cible4567, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
+```
+
+#### **Gare de Sion Sud (GSD) Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+GSD <- as_tsibble(GSD)
+weekday <- weekdays(GSD$date)
+GSD$weekday <- weekday # Get the weekday values
+GSD$time <- as.POSIXct(GSD$date, format = "%H:%M:%S %p")
+GSD$time <- as.numeric(GSD$date) #convert date values to numeric
+as.numeric(GSD$time)
+
+gsd <- GSD %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+gsd$minutes <- as.numeric(as.character(gsd$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+gsd <- gsd %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+gsd.gaps <- has_gaps(gsd)
+gsd.gaps <- scan_gaps(gsd)
+gsd <- gsd %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+gsd_ts <- gsd %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(gsd_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+gsd <- gsd_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+gsd %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Gare de Sion Sud station")
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Plotting from Monday till Wednesday 
+gsd123 <- gsd %>% 
+  filter(weekday == "Monday" |weekday == "Tuesday" | 
+           weekday == "Wednesday")
+
+# plot the data
+qplot(date, Number, data = gsd123, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
+
+# Plotting from Thursday till Sunday 
+gsd4567 <- gsd %>% 
+  filter(weekday == "Thursday" |weekday == "Friday" | 
+           weekday == "Saturday" | weekday == "Sunday")
+
+# plot the data
+qplot(date, Number, data = gsd4567, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
+```
+
+#### **P+R Potence Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+PRP <- as_tsibble(PRP)
+weekday <- weekdays(PRP$date)
+PRP$weekday <- weekday # Get the weekday values
+PRP$time <- as.POSIXct(PRP$date, format = "%H:%M:%S %p")
+PRP$time <- as.numeric(PRP$date) #convert date values to numeric
+as.numeric(PRP$time)
+
+prp <- PRP %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+prp$minutes <- as.numeric(as.character(prp$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+prp <- prp %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+prp.gaps <- has_gaps(prp)
+prp.gaps <- scan_gaps(prp)
+prp <- prp %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+prp_ts <- prp %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(prp_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+prp <- prp_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+prp %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in P+R Potences station")
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Plotting from Monday till Wednesday 
+prp123 <- prp %>% 
+  filter(weekday == "Monday" |weekday == "Tuesday" | 
+           weekday == "Wednesday")
+
+# plot the data
+qplot(date, Number, data = prp123, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
+
+# Plotting from Thursday till Sunday 
+prp4567 <- prp %>% 
+  filter(weekday == "Thursday" |weekday == "Friday" | 
+           weekday == "Saturday" | weekday == "Sunday")
+
+# plot the data
+qplot(date, Number, data = prp4567, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
+```
+
+#### **Platta Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Platta <- as_tsibble(Platta)
+weekday <- weekdays(Platta$date)
+Platta$weekday <- weekday # Get the weekday values
+Platta$time <- as.POSIXct(Platta$date, format = "%H:%M:%S %p")
+Platta$time <- as.numeric(Platta$date) #convert date values to numeric
+as.numeric(Platta$time)
+
+platta <- Platta %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+platta$minutes <- as.numeric(as.character(platta$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+platta <- platta %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+platta.gaps <- has_gaps(platta)
+platta.gaps <- scan_gaps(platta)
+platta <- platta %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+platta_ts <- platta %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(platta_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+platta <- platta_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+platta %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Platta station")
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Plotting from Monday till Wednesday 
+platta123 <- platta %>% 
+  filter(weekday == "Monday" |weekday == "Tuesday" | 
+           weekday == "Wednesday")
+
+# plot the data
+qplot(date, Number, data = platta123, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
+
+# Plotting from Thursday till Sunday 
+platta4567 <- platta %>% 
+  filter(weekday == "Thursday" |weekday == "Friday" | 
+           weekday == "Saturday" | weekday == "Sunday")
+
+# plot the data
+qplot(date, Number, data = platta4567, geom = "line", 
+      group = Types, colour= Types, main = "Bike usage per day", 
+      xlab = "Date [10 min]", ylab = "Number of bike") +
+  facet_grid(weekday ~ ., scale = "free_y")
+```
+
+
+#### **Planta Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Planta <- as_tsibble(Planta)
+weekday <- weekdays(Planta$date)
+Planta$weekday <- weekday # Get the weekday values
+Planta$time <- as.POSIXct(Planta$date, format = "%H:%M:%S %p")
+Planta$time <- as.numeric(Planta$date) #convert date values to numeric
+as.numeric(Planta$time)
+
+planta <- Planta %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+planta$minutes <- as.numeric(as.character(planta$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+planta <- planta %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+planta.gaps <- has_gaps(planta)
+planta.gaps <- scan_gaps(planta)
+planta <- planta %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+planta_ts <- planta %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(planta_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+planta <- planta_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+planta %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Planta station")
+```
+
+
+#### **Hôpital - CRR Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+CRR <- as_tsibble(CRR)
+weekday <- weekdays(CRR$date)
+CRR$weekday <- weekday # Get the weekday values
+CRR$time <- as.POSIXct(CRR$date, format = "%H:%M:%S %p")
+CRR$time <- as.numeric(CRR$date) #convert date values to numeric
+as.numeric(CRR$time)
+
+crr <- CRR %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+crr$minutes <- as.numeric(as.character(crr$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+crr <- crr %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+crr.gaps <- has_gaps(crr)
+crr.gaps <- scan_gaps(crr)
+crr <- crr %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+crr_ts <- crr %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(crr_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+crr <- crr_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+crr %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Hôpital - CRR station")
+```
+
+
+#### **Campus Energypolis Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Campus <- as_tsibble(Campus)
+weekday <- weekdays(Campus$date)
+Campus$weekday <- weekday # Get the weekday values
+Campus$time <- as.POSIXct(Campus$date, format = "%H:%M:%S %p")
+Campus$time <- as.numeric(Campus$date) #convert date values to numeric
+as.numeric(Campus$time)
+
+campus <- Campus %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+campus$minutes <- as.numeric(as.character(campus$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+campus <- campus %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+campus.gaps <- has_gaps(campus)
+campus.gaps <- scan_gaps(campus)
+campus <- campus %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+campus_ts <- campus %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(campus_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+campus <- campus_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+campus %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Campus Energypolis station")
+```
+
+#### **Scex Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Scex <- as_tsibble(Scex)
+weekday <- weekdays(Scex$date)
+Scex$weekday <- weekday # Get the weekday values
+Scex$time <- as.POSIXct(Scex$date, format = "%H:%M:%S %p")
+Scex$time <- as.numeric(Scex$date) #convert date values to numeric
+as.numeric(Scex$time)
+
+scex <- Scex %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+scex$minutes <- as.numeric(as.character(scex$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+scex <- scex %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+scex.gaps <- has_gaps(scex)
+scex.gaps <- scan_gaps(scex)
+scex <- scex %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+scex_ts <- scex %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(scex_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+scex <- scex_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+scex %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Scex station")
+```
+
+#### **Châteauneuf-Furet Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Furet <- as_tsibble(Furet)
+weekday <- weekdays(Furet$date)
+Furet$weekday <- weekday # Get the weekday values
+Furet$time <- as.POSIXct(Furet$date, format = "%H:%M:%S %p")
+Furet$time <- as.numeric(Furet$date) #convert date values to numeric
+as.numeric(Furet$time)
+
+furet <- Furet %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+furet$minutes <- as.numeric(as.character(furet$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+furet <- furet %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+furet.gaps <- has_gaps(furet)
+furet.gaps <- scan_gaps(furet)
+furet <- furet %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+furet_ts <- furet %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(furet_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+furet <- furet_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+furet %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Châteauneuf-Furet station")
+```
+
+#### **Agasse Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Agasse <- as_tsibble(Agasse)
+weekday <- weekdays(Agasse$date)
+Agasse$weekday <- weekday # Get the weekday values
+Agasse$time <- as.POSIXct(Agasse$date, format = "%H:%M:%S %p")
+Agasse$time <- as.numeric(Agasse$date) #convert date values to numeric
+as.numeric(Agasse$time)
+
+agasse <- Agasse %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+agasse$minutes <- as.numeric(as.character(agasse$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+agasse <- agasse %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+agasse.gaps <- has_gaps(agasse)
+agasse.gaps <- scan_gaps(agasse)
+agasse <- agasse %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+agasse_ts <- agasse %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(agasse_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+agasse <- agasse_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+agasse %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Agasse station")
+```
+
+
+#### **P+R Stade Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Stade <- as_tsibble(Stade)
+weekday <- weekdays(Stade$date)
+Stade$weekday <- weekday # Get the weekday values
+Stade$time <- as.POSIXct(Stade$date, format = "%H:%M:%S %p")
+Stade$time <- as.numeric(Stade$date) #convert date values to numeric
+as.numeric(Stade$time)
+
+stade <- Stade %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+stade$minutes <- as.numeric(as.character(stade$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+stade <- stade %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+stade.gaps <- has_gaps(stade)
+stade.gaps <- scan_gaps(stade)
+stade <- stade %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+stade_ts <- stade %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(stade_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+stade <- stade_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+stade %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in P+R Stade station")
+```
+
+#### **Gare de Sion Nord (GSN) Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
 GSN <- as_tsibble(GSN)
 weekday <- weekdays(GSN$date)
 GSN$weekday <- weekday # Get the weekday values
@@ -288,10 +801,22 @@ as.numeric(GSN$time)
 gsn <- GSN %>% 
   mutate(minutes = time - lag(time, default = first(time))) # subtract days
 gsn$minutes <- as.numeric(as.character(gsn$minutes))/60 # transform to minutes
-gsn$minutes[gsn$minutes == 0] <- gsn$minutes[2] 
+
+# Filter the data by time difference of 10 min
+gsn <- gsn %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+gsn.gaps <- has_gaps(gsn)
+gsn.gaps <- scan_gaps(gsn)
+gsn <- gsn %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
 gsn_ts <- gsn %>%
-  relocate(date, .before = Bike) %>%
-    select(-time,-name)
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(gsn_ts) # no missing values
 
 #  convert our data frame from wide to long format.
 gsn <- gsn_ts %>% 
@@ -300,30 +825,106 @@ gsn <- gsn_ts %>%
   relocate(Number, .before = weekday)
 ```
 
-```{r message=FALSE, warning=FALSE}
-############### Monday
-gsn_1 <- gsn_ts %>% 
-  filter(weekday == "Monday")
-unique(gsn_1[c("minutes")]) # Identify the unique values of a column
-# The value with a diff time of; 120 only have one observation
-
-# Plot Multiple Series On Same Axes for Monday
-p1 <- gsn %>% filter(weekday == "Monday") %>%
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+gsn %>% 
   select(-weekday, -minutes) %>%
   autoplot(Number) +
-  xlab("Date") + ylab("Amount of Bikes") +
-  ggtitle("Frequencies of usage on Monday")
-
-p2 <- gsn %>% filter(weekday == "Monday") %>%
-  filter(minutes == 10) %>%
-  select(-weekday, -minutes) %>%
-  autoplot(Number) +
-  xlab("Date[10min]") + ylab("Amount of Bikes")
-
-p3 <- gsn %>% filter(weekday == "Monday") %>%
-  filter(minutes == 60) %>%
-  select(-weekday, -minutes) %>%
-  autoplot(Number) +
-  xlab("Date[60min]") + ylab("Amount of Bikes")
-p1 /(p2 | p3) #needs library patchwork
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Gare de Sion Nord (GSN) station")
 ```
+
+#### **Ancien Stand Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Stand <- as_tsibble(Stand)
+weekday <- weekdays(Stand$date)
+Stand$weekday <- weekday # Get the weekday values
+Stand$time <- as.POSIXct(Stand$date, format = "%H:%M:%S %p")
+Stand$time <- as.numeric(Stand$date) #convert date values to numeric
+as.numeric(Stand$time)
+
+stand <- Stand %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+stand$minutes <- as.numeric(as.character(stand$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+stand <- stand %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+stand.gaps <- has_gaps(stand)
+stand.gaps <- scan_gaps(stand)
+stand <- stand %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+stand_ts <- stand %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(stand_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+stand <- stand_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+stand %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Ancien Stand station")
+```
+
+#### **UNIL/UNIGE Bramois Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Bramois <- as_tsibble(Bramois)
+weekday <- weekdays(Bramois$date)
+Bramois$weekday <- weekday # Get the weekday values
+Bramois$time <- as.POSIXct(Bramois$date, format = "%H:%M:%S %p")
+Bramois$time <- as.numeric(Bramois$date) #convert date values to numeric
+as.numeric(Bramois$time)
+
+bramois <- Bramois %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+bramois$minutes <- as.numeric(as.character(bramois$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+bramois <- bramois %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+bramois.gaps <- has_gaps(bramois)
+bramois.gaps <- scan_gaps(bramois)
+bramois <- bramois %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+bramois_ts <- bramois %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(bramois_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+bramois <- bramois_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+bramois %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in UNIL/UNIGE Bramois station")
+```
+
