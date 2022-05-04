@@ -21,6 +21,7 @@ Stade <- as_tsibble(Stade)
 GSN <- as_tsibble(GSN)
 Stand <- as_tsibble(Stand)
 Bramois <- as_tsibble(Bramois)
+Sys.setlocale("LC_TIME", "C")
 ```
 
 ### **Data Description**
