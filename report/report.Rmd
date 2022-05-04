@@ -5,7 +5,7 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     theme:
-      bootswatch: lux
+      bootswatch: united
 ---
 <style>
 body {
@@ -13,6 +13,6 @@ text-align: justify}
 </style>
 
 
-```{r child = c('intro.Rmd', 'data.Rmd', 'eda.Rmd', 'analysis.Rmd', 'concl.Rmd')}
+```{r child = c('data.Rmd', 'eda.Rmd')}
 ```
 
