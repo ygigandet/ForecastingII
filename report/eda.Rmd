@@ -14,6 +14,7 @@ Sys.setlocale("LC_TIME", "C")
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 # Creation of time series
 Bietschhorn <- as_tsibble(Bietschhorn)
+
 weekday <- weekdays(Bietschhorn$date)
 Bietschhorn$weekday <- weekday # Get the weekday values
 Bietschhorn$time <- as.POSIXct(Bietschhorn$date, format = "%H:%M:%S %p")
@@ -196,6 +197,7 @@ cible <- cible_ts %>%
 ```
 
 
+
 ```{r, echo=FALSE, message=FALSE}
 # Create table of Usage of the station
 cible %>% 
@@ -267,6 +269,7 @@ gsd <- gsd_ts %>%
   relocate(Types, .before = weekday) %>%
   relocate(Number, .before = weekday)
 ```
+
 
 
 ```{r, echo=FALSE, message=FALSE}
@@ -906,6 +909,7 @@ bramois.gaps <- has_gaps(bramois)
 bramois.gaps <- scan_gaps(bramois)
 bramois <- bramois %>% 
   fill_gaps(.full = TRUE) 
+
 
 # Replace NA's values as previous row 
 bramois_ts <- bramois %>%
