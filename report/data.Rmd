@@ -3,7 +3,6 @@
 source(here::here("scripts/setup.R"))
 ```
 
-## Data
 
 ```{r}
 setwd(here::here("data/"))
