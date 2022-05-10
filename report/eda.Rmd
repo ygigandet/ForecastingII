@@ -83,6 +83,15 @@ qplot(date, Number, data = bietschhorn4567, geom = "line",
   facet_grid(weekday ~ ., scale = "free_y")
 ```
 
+```{r}
+bietschhorn %>% filter(weekday== "Friday") %>%
+  subset(date> "2022-03-11 00:00:00" & date < "2022-03-18 00:00:00") %>%
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Bietschhorn station")
+```
+
 #### **Blancherie Station **
 
 We note from the data sets that the time differences in a day are generally divided by 10 and 60 minutes, which is why we have considered dividing it by blocks of time difference per day, so we could interpret the usage patterns more easily. 
