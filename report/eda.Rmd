@@ -68,8 +68,15 @@ lubridate::month(bietschhorn_monday$date) <- 04
 bietschhorn_monday <- bietschhorn_monday %>%
   group_by(date, Types) %>%
   summarise(Number = median(Number)) %>%
+  as_tsibble(key = Types) %>%
   mutate(weekday = "Monday")
 bietschhorn_monday$Number <- ceiling(bietschhorn_monday$Number)
+
+bietschhorn_monday %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Bike usage on Monday")
 
 bietschhorn_tuesday <- bietschhorn %>%
   filter(weekday == "Tuesday") 
@@ -78,8 +85,15 @@ lubridate::month(bietschhorn_tuesday$date) <- 04
 bietschhorn_tuesday <- bietschhorn_tuesday %>%
   group_by(date, Types) %>%
   summarise(Number = median(Number)) %>%
+  as_tsibble(key = Types) %>%
   mutate(weekday = "Tuesday")
 bietschhorn_tuesday$Number <- ceiling(bietschhorn_tuesday$Number)
+
+bietschhorn_tuesday %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Bike usage on Tuesday")
 
 bietschhorn_wednesday <- bietschhorn %>%
   filter(weekday == "Wednesday") 
@@ -88,8 +102,15 @@ lubridate::month(bietschhorn_wednesday$date) <- 04
 bietschhorn_wednesday <- bietschhorn_wednesday %>%
   group_by(date, Types) %>%
   summarise(Number = median(Number)) %>%
+  as_tsibble(key = Types) %>%
   mutate(weekday = "Wednesday")
 bietschhorn_wednesday$Number <- ceiling(bietschhorn_wednesday$Number)
+
+bietschhorn_wednesday %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Bike usage on Wednesday")
 
 bietschhorn_thursday <- bietschhorn %>%
   filter(weekday == "Thursday") 
@@ -102,6 +123,12 @@ bietschhorn_thursday <- bietschhorn_thursday %>%
   mutate(weekday = "Thursday")
 bietschhorn_thursday$Number <- ceiling(bietschhorn_thursday$Number)
 
+bietschhorn_thursday %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Bike usage on Thursday")
+
 bietschhorn_friday <- bietschhorn %>%
   filter(weekday == "Friday") 
 lubridate::day(bietschhorn_friday$date) <- 18
@@ -109,8 +136,15 @@ lubridate::month(bietschhorn_friday$date) <- 04
 bietschhorn_friday <- bietschhorn_friday %>%
   group_by(date, Types) %>%
   summarise(Number = median(Number)) %>%
+  as_tsibble(key = Types) %>%
   mutate(weekday = "Friday")
 bietschhorn_friday$Number <- ceiling(bietschhorn_friday$Number)
+
+bietschhorn_friday %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Bike usage on Friday")
 
 bietschhorn_saturday <- bietschhorn %>%
   filter(weekday == "Saturday") 
@@ -119,8 +153,15 @@ lubridate::month(bietschhorn_saturday$date) <- 04
 bietschhorn_saturday <- bietschhorn_saturday %>%
   group_by(date, Types) %>%
   summarise(Number = median(Number)) %>%
+  as_tsibble(key = Types) %>%
   mutate(weekday = "Saturday")
 bietschhorn_saturday$Number <- ceiling(bietschhorn_saturday$Number)
+
+bietschhorn_saturday %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Bike usage on Saturday")
 
 bietschhorn_sunday <- bietschhorn %>%
   filter(weekday == "Sunday") 
@@ -129,36 +170,15 @@ lubridate::month(bietschhorn_sunday$date) <- 04
 bietschhorn_sunday <- bietschhorn_sunday %>%
   group_by(date, Types) %>%
   summarise(Number = median(Number)) %>%
+  as_tsibble(key = Types) %>%
   mutate(weekday = "Sunday")
 bietschhorn_sunday$Number <- ceiling(bietschhorn_sunday$Number)
 
-bietschhorn_week <- rbind(bietschhorn_monday,bietschhorn_tuesday, 
-                          bietschhorn_wednesday, bietschhorn_thursday,
-                          bietschhorn_friday, bietschhorn_saturday,
-                          bietschhorn_sunday)
-bietschhorn_week <- bietschhorn_week %>% as_tsibble(key = Types)
-
-# Plotting from Monday till Wednesday 
-bietschhorn_week123 <- bietschhorn_week %>% 
-  filter(weekday == "Monday" |weekday == "Tuesday" | 
-           weekday == "Wednesday")
-
-# plot the data
-qplot(date, Number, data = bietschhorn_week123, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-
-# Plotting from Thursday till Sunday 
-bietschhorn_week4567 <- bietschhorn_week %>% 
-  filter(weekday == "Thursday" |weekday == "Friday" | 
-           weekday == "Saturday" | weekday == "Sunday")
-
-# plot the data
-qplot(date, Number, data = bietschhorn_week4567, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
+bietschhorn_sunday %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Bike usage on Sunday")
 ```
 
 #### **Blancherie Station **
