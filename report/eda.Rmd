@@ -181,6 +181,78 @@ bietschhorn_sunday %>%
   ggtitle("Bike usage on Sunday")
 ```
 
+```{r}
+# Now that we have an idea of the trend, like to plot for every monday
+bietschhorn_monday_continuous <- bietschhorn %>% 
+  filter(weekday == "Monday" & Types == "Bike") %>% 
+  arrange(date)
+
+bietschhorn_monday_continuous[1:144,] %>% 
+  autoplot(Number)
+
+bietschhorn_monday_continuous[145:288,] %>% 
+  autoplot(Number)
+
+bietschhorn_monday_continuous[289:432,] %>% 
+  autoplot(Number)
+
+bietschhorn_monday_continuous[433:576,] %>% 
+  autoplot(Number)
+
+# Try to keep only the mondays
+bietschhorn_mondays <- bietschhorn_monday_continuous %>% 
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+bietschhorn_mondays %>% 
+  autoplot(Number)
+
+fit <- bietschhorn_mondays %>%
+  model(ETS(Number))
+
+fc <- fit %>%
+  forecast(h = 144)
+
+fc %>%
+  autoplot(bietschhorn_mondays)
+
+fit <- bietschhorn_mondays %>% 
+  model(ARIMA(Number))
+
+fc <- fit %>%
+  forecast(h = 144)
+
+fc %>%
+  autoplot(bietschhorn_mondays)
+```
+
+```{r}
+# Same idea but now take into account the day after. Because Monday should influence Tuesday
+bietschhorn_mondays_tuesdays <- bietschhorn %>% 
+  filter(Types == "Bike") %>% 
+  filter(weekday == "Monday" | weekday == "Tuesday")
+
+bietschhorn_mondays_tuesdays <- bietschhorn_mondays_tuesdays %>% 
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+bietschhorn_mondays_tuesdays %>% 
+  autoplot(Number)
+
+fit <- bietschhorn_mondays_tuesdays[1:1584,] %>%
+  model(ETS(Number))
+
+fc <- fit %>%
+  forecast(h = 144)
+
+fc %>%
+  autoplot(bietschhorn_mondays_tuesdays)
+
+bietschhorn_mondays_tuesdays %>% 
+  ACF(Number) %>% 
+  autoplot()
+```
+
 #### **Blancherie Station **
 
 We note from the data sets that the time differences in a day are generally divided by 10 and 60 minutes, which is why we have considered dividing it by blocks of time difference per day, so we could interpret the usage patterns more easily. 
