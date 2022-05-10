@@ -60,24 +60,102 @@ bietschhorn %>%
 
 
 ```{r, echo=FALSE, message=FALSE}
+library(lubridate)
+bietschhorn_monday <- bietschhorn %>%
+  filter(weekday == "Monday") 
+lubridate::day(bietschhorn_monday$date) <- 14
+lubridate::month(bietschhorn_monday$date) <- 04
+bietschhorn_monday <- bietschhorn_monday %>%
+  group_by(date, Types) %>%
+  summarise(Number = median(Number)) %>%
+  mutate(weekday = "Monday")
+bietschhorn_monday$Number <- ceiling(bietschhorn_monday$Number)
+
+bietschhorn_tuesday <- bietschhorn %>%
+  filter(weekday == "Tuesday") 
+lubridate::day(bietschhorn_tuesday$date) <- 15
+lubridate::month(bietschhorn_tuesday$date) <- 04
+bietschhorn_tuesday <- bietschhorn_tuesday %>%
+  group_by(date, Types) %>%
+  summarise(Number = median(Number)) %>%
+  mutate(weekday = "Tuesday")
+bietschhorn_tuesday$Number <- ceiling(bietschhorn_tuesday$Number)
+
+bietschhorn_wednesday <- bietschhorn %>%
+  filter(weekday == "Wednesday") 
+lubridate::day(bietschhorn_wednesday$date) <- 16
+lubridate::month(bietschhorn_wednesday$date) <- 04
+bietschhorn_wednesday <- bietschhorn_wednesday %>%
+  group_by(date, Types) %>%
+  summarise(Number = median(Number)) %>%
+  mutate(weekday = "Wednesday")
+bietschhorn_wednesday$Number <- ceiling(bietschhorn_wednesday$Number)
+
+bietschhorn_thursday <- bietschhorn %>%
+  filter(weekday == "Thursday") 
+lubridate::day(bietschhorn_thursday$date) <- 17
+lubridate::month(bietschhorn_thursday$date) <- 04
+bietschhorn_thursday <- bietschhorn_thursday %>%
+  group_by(date, Types) %>%
+  summarise(Number = median(Number)) %>%
+  as_tsibble(key = Types) %>%
+  mutate(weekday = "Thursday")
+bietschhorn_thursday$Number <- ceiling(bietschhorn_thursday$Number)
+
+bietschhorn_friday <- bietschhorn %>%
+  filter(weekday == "Friday") 
+lubridate::day(bietschhorn_friday$date) <- 18
+lubridate::month(bietschhorn_friday$date) <- 04
+bietschhorn_friday <- bietschhorn_friday %>%
+  group_by(date, Types) %>%
+  summarise(Number = median(Number)) %>%
+  mutate(weekday = "Friday")
+bietschhorn_friday$Number <- ceiling(bietschhorn_friday$Number)
+
+bietschhorn_saturday <- bietschhorn %>%
+  filter(weekday == "Saturday") 
+lubridate::day(bietschhorn_saturday$date) <- 19
+lubridate::month(bietschhorn_saturday$date) <- 04
+bietschhorn_saturday <- bietschhorn_saturday %>%
+  group_by(date, Types) %>%
+  summarise(Number = median(Number)) %>%
+  mutate(weekday = "Saturday")
+bietschhorn_saturday$Number <- ceiling(bietschhorn_saturday$Number)
+
+bietschhorn_sunday <- bietschhorn %>%
+  filter(weekday == "Sunday") 
+lubridate::day(bietschhorn_sunday$date) <- 20
+lubridate::month(bietschhorn_sunday$date) <- 04
+bietschhorn_sunday <- bietschhorn_sunday %>%
+  group_by(date, Types) %>%
+  summarise(Number = median(Number)) %>%
+  mutate(weekday = "Sunday")
+bietschhorn_sunday$Number <- ceiling(bietschhorn_sunday$Number)
+
+bietschhorn_week <- rbind(bietschhorn_monday,bietschhorn_tuesday, 
+                          bietschhorn_wednesday, bietschhorn_thursday,
+                          bietschhorn_friday, bietschhorn_saturday,
+                          bietschhorn_sunday)
+bietschhorn_week <- bietschhorn_week %>% as_tsibble(key = Types)
+
 # Plotting from Monday till Wednesday 
-bietschhorn123 <- bietschhorn %>% 
+bietschhorn_week123 <- bietschhorn_week %>% 
   filter(weekday == "Monday" |weekday == "Tuesday" | 
            weekday == "Wednesday")
 
 # plot the data
-qplot(date, Number, data = bietschhorn123, geom = "line", 
+qplot(date, Number, data = bietschhorn_week123, geom = "line", 
       group = Types, colour= Types, main = "Bike usage per day", 
       xlab = "Date [10 min]", ylab = "Number of bike") +
   facet_grid(weekday ~ ., scale = "free_y")
 
 # Plotting from Thursday till Sunday 
-bietschhorn4567 <- bietschhorn %>% 
+bietschhorn_week4567 <- bietschhorn_week %>% 
   filter(weekday == "Thursday" |weekday == "Friday" | 
            weekday == "Saturday" | weekday == "Sunday")
 
 # plot the data
-qplot(date, Number, data = bietschhorn4567, geom = "line", 
+qplot(date, Number, data = bietschhorn_week4567, geom = "line", 
       group = Types, colour= Types, main = "Bike usage per day", 
       xlab = "Date [10 min]", ylab = "Number of bike") +
   facet_grid(weekday ~ ., scale = "free_y")
