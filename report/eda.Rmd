@@ -66,37 +66,41 @@ bietschhorn_ts <- bietschhorn_ts %>%
 # Apply STL Decomposition to see the patterns on the data
 dcmp <- bietschhorn %>% filter(Types == "Bike" | Types == "Capacity") %>%
   model(STL(Number))
-components(dcmp) %>% autoplot() + xlab("Date")
+components(dcmp) %>% autoplot() + xlab("Date [10 min]")
 
 dcmp <- bietschhorn %>% filter(Types == "E-Bike" | Types == "Capacity") %>%
   model(STL(Number))
-components(dcmp) %>% autoplot() + xlab("Date")
-
-# ACF plots to determine autocorrelation on the tables
-bietschhorn %>%
-  filter(Types == "Bike" | Types == "E-Bike") %>%
-  ACF(Number, lag_max = 144) %>% # There are 144 intervals of 10 min in a day
-   autoplot() +
-  labs(title="Usage frequencies in Bietschhorn station")
+components(dcmp) %>% autoplot() + xlab("Date [10 min]")
 
 # Convert to stationary
 bietschhorn <- bietschhorn %>% mutate(diff_number = difference(Number))
 bietschhorn %>% filter(Types != "Capacity") %>% autoplot(diff_number)
 
+# ACF plots to determine autocorrelation on the tables vs differenced 
+p1 <- bietschhorn %>% filter(Types != "Capacity") %>% 
+  ACF(Number, lag_max = 144) %>% autoplot()  # There are 144 intervals of 10 min in a day
+p2 <- bietschhorn %>% filter(Types != "Capacity") %>% 
+  ACF(diff_number, lag_max = 144) %>% autoplot()
+p1 / p2
 
-p1 <- bietschhorn %>% filter(Types != "Capacity") %>% ACF(Number) %>% autoplot()
-p2 <- bietschhorn %>% filter(Types != "Capacity") %>% ACF(diff_number) %>% autoplot()
-p1 + p2
+# Apply ETS Model
+fit <- bietschhorn %>% filter(Types != "Capacity") %>% model(ETS(Number)) 
+fit %>% forecast(h = 144) %>% autoplot(bietschhorn) +
+  ggtitle("ETS Model") + xlab("Date [10 min]") + ylab("Number of bikes") 
 
-fit <- bietschhorn %>% filter(Types == "Bike") %>% model(ARIMA(Number)) 
-                                                  # Model: ARIMA(1,1,0)(0,0,2)[6] 
-
-fit %>% forecast(h = 144) %>% autoplot(bietschhorn)
-
+# Apply ARIMA Model
+fit <- bietschhorn %>% filter(Types != "Capacity") %>% model(ARIMA(Number)) 
+fit %>% forecast(h = 144) %>% autoplot(bietschhorn) +
+  ggtitle("ARIMA Model") + xlab("Date [10 min]") + ylab("Number of bikes") 
 
 
 ```
 
+> Models applied
+
+* Model: ARIMA(1,1,0)(0,0,2)[6] (Bike)
+* Model: ARIMA(4,1,1)(1,0,0)[6] (E-Bike)
+* Model: ETS(A,Ad,N) (Bike & E-Bike)
 
 ```{r, echo=FALSE, message=FALSE}
 library(lubridate)
@@ -1040,11 +1044,12 @@ sion_ts_long <- sion_ts %>%
 #sion_ts_long$Number <- ceiling(sion_ts_long$Number)
 ```
 
-# Plot Sion stations
+
 ```{r, echo=FALSE, message=FALSE}
 sion_ts_long %>% autoplot(Number) + ylab("Number of Bikes") +
   facet_wrap(vars(Stations), scales = "free_y", ncol = 4) + 
-  theme(legend.position = "none")
+  theme(legend.position = "none") + 
+  ggtitle("Past counts of bicycles at Sion stations")
 ```
 
 
