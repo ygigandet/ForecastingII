@@ -90,7 +90,7 @@ fit %>% forecast(h = 144) %>% autoplot(bietschhorn) +
 
 # Apply ARIMA Model
 fit <- bietschhorn %>% filter(Types != "Capacity") %>% model(ARIMA(Number)) 
-fit %>% forecast(h = 144) %>% autoplot(bietschhorn) +
+fit %>% forecast(h = "1 week") %>% autoplot(bietschhorn) +
   ggtitle("ARIMA Model") + xlab("Date [10 min]") + ylab("Number of bikes") 
 
 
@@ -222,8 +222,147 @@ bietschhorn_sunday %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Bike usage on Sunday")
+
+bietschhorn_week <- rbind(bietschhorn_monday, bietschhorn_tuesday, 
+                          bietschhorn_wednesday, bietschhorn_thursday, 
+                          bietschhorn_friday, bietschhorn_saturday,
+                          bietschhorn_sunday)
+bietschhorn_week %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bikes") +
+  ggtitle("Past counts of bicycles at Bietschhorn per week")
+
+# Apply ETS Model
+# Bike
+fit <- bietschhorn_week %>% filter(Types == "Bike") %>% model(ETS(Number)) 
+fit %>% forecast(h = 144) %>% autoplot(bietschhorn) +
+  ggtitle("ETS Model") + xlab("Date [10 min]") + ylab("Number of bikes") 
+
+# E-Bike
+fit <- bietschhorn_week %>% filter(Types == "E-Bike") %>% model(ETS(Number)) 
+fit %>% forecast(h = 144) %>% autoplot(bietschhorn) +
+  xlab("Date [10 min]") + ylab("Number of bikes")
+
+
+# Apply ARIMA Model
+# Bike
+fit <- bietschhorn_week %>% filter(Types == "Bike") %>% model(ARIMA(Number)) 
+fit %>% forecast(h = 144) %>% autoplot(bietschhorn) +
+  ggtitle("ARIMA Model") + xlab("Date [10 min]") + ylab("Number of bikes") 
+
+# E-Bike
+fit <- bietschhorn_week %>% filter(Types == "E-Bike") %>% model(ARIMA(Number)) 
+fit %>% forecast(h = 144) %>% autoplot(bietschhorn) +
+  xlab("Date [10 min]") + ylab("Number of bikes")
+
 ```
 
+```{r, echo=FALSE, message=FALSE}
+# Now that we have an idea of the trend, like to plot for every monday
+bietschhorn_monday_continuous <- bietschhorn %>% 
+  filter(weekday == "Monday" & Types == "Bike") #%>% 
+#  arrange(date)
+#bietschhorn_monday_continuous[1:144,] %>% 
+#  autoplot(Number)
+#bietschhorn_monday_continuous[145:288,] %>% 
+#  autoplot(Number)
+#bietschhorn_monday_continuous[289:432,] %>% 
+#  autoplot(Number)
+#bietschhorn_monday_continuous[433:576,] %>% 
+#  autoplot(Number)
+# Try to keep only the mondays
+bietschhorn_mondays <- bietschhorn_monday_continuous %>% 
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+#The p-value of 0.01 indicates strong evidence to reject the null hypothesis of stationarity.
+bietschhorn_mondays %>% features(Number, unitroot_kpss)
+
+# Changed to Stationary, ARIMA models have to consider 1 on "d" (p,d,q)
+bietschhorn_mondays %>% mutate(diff_number = difference(Number)) %>%
+  features(diff_number, unitroot_kpss)
+
+# Apply STL Decomposition to see the patterns on the data
+dcmp <- bietschhorn_mondays %>% model(STL(Number))
+components(dcmp) %>% autoplot() + xlab("Date [10 min]")
+
+# Apply ETS Model
+fit <- bietschhorn_mondays %>% model(ETS = ETS(Number))
+fc <- fit %>% forecast(h = 144)
+p1 <- fc %>% autoplot(bietschhorn_mondays) +
+  xlab("Every 10 minutes") + ylab("Number of bikes") +
+  ggtitle("ETS Model on Mondays")
+
+# Apply ARIMA Model
+fit <- bietschhorn_mondays %>% 
+  model(ARIMA(Number)) # ARIMA(0,1,1) 
+fc <- fit %>% forecast(h = 144)
+p2 <- fc %>% autoplot(bietschhorn_mondays) +
+  xlab("Every 10 minutes") + ylab("Number of bikes") +
+  ggtitle("ARIMA Model on Mondays")
+p1 /p2
+
+# Apply TSLM Model
+fit <- bietschhorn_mondays %>% model(TSLM(Number ~ trend()))
+fc <- fit %>% forecast(h = 144)
+fc %>% autoplot(bietschhorn_mondays) +
+  xlab("Every 10 minutes") + ylab("Number of bikes") +
+  ggtitle("ETS Model on Mondays")
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Now that we have an idea of the trend, like to plot for every tuesday
+bietschhorn_tuesdays <- bietschhorn %>% 
+  filter(Types == "Bike") %>% 
+  filter(weekday == "Tuesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+# Apply ETS Model
+fit <- bietschhorn_tuesdays %>%
+  model(ETS = ETS(Number))
+fc <- fit %>%
+  forecast(h = 144)
+p1 <- fc %>%
+  autoplot(bietschhorn_tuesdays) +
+  xlab("Every 10 minutes") + ylab("Number of bikes") +
+  ggtitle("ETS Model on Tuesday")
+
+# Apply ARIMA Model
+fit <- bietschhorn_tuesdays %>%  model(ARIMA(Number)) # ARIMA(0,1,1) 
+fc <- fit %>% forecast(h = 144)
+p2 <- fc %>% autoplot(bietschhorn_tuesdays) +
+  xlab("Every 10 minutes") + ylab("Number of bikes") +
+  ggtitle("ARIMA Model on Tuesday")
+p1 /p2
+
+
+# Same idea but now take into account the day after. Because Monday should influence Tuesday
+
+bietschhorn_mondays_tuesdays <- bietschhorn %>% 
+  filter(Types == "Bike") %>% 
+  filter(weekday == "Monday" | weekday == "Tuesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+# Apply ETS Model
+fit <- bietschhorn_mondays_tuesdays[1:1584,] %>%
+  model(ETS(Number))
+fc <- fit %>% forecast(h = 144)
+p1 <- fc %>% autoplot(bietschhorn_mondays_tuesdays) +
+  xlab("Every 10 minutes") + ylab("Number of bikes") +
+  ggtitle("ETS Model on Mondays and Tuesdays")
+
+# Apply ARIMA Model
+fit <- bietschhorn_mondays_tuesdays[1:1584,] %>% 
+  model(ARIMA(Number))  
+fc <- fit %>% forecast(h = 144)
+p2 <- fc %>% autoplot(bietschhorn_mondays_tuesdays) +
+  xlab("Every 10 minutes") + ylab("Number of bikes") +
+  ggtitle("ARIMA Model on Mondays and Tuesdays")
+p1 /p2
+```
 #### **Blancherie Station **
 
 We note from the data sets that the time differences in a day are generally divided by 10 and 60 minutes, which is why we have considered dividing it by blocks of time difference per day, so we could interpret the usage patterns more easily. 
