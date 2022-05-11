@@ -56,6 +56,11 @@ bietschhorn %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Bietschhorn station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+bietschhorn_ts$Bietschhorn <- bietschhorn_ts$Bike + bietschhorn_ts$`E-Bike`
+bietschhorn_ts <- bietschhorn_ts %>% 
+  select(date, Bietschhorn)
 ```
 
 
@@ -184,46 +189,47 @@ bietschhorn_sunday %>%
 ```{r}
 # Now that we have an idea of the trend, like to plot for every monday
 bietschhorn_monday_continuous <- bietschhorn %>% 
-  filter(weekday == "Monday" & Types == "Bike") %>% 
-  arrange(date)
+  filter(weekday == "Monday" & Types == "Bike") #%>% 
+#  arrange(date)
 
-bietschhorn_monday_continuous[1:144,] %>% 
-  autoplot(Number)
+#bietschhorn_monday_continuous[1:144,] %>% 
+#  autoplot(Number)
 
-bietschhorn_monday_continuous[145:288,] %>% 
-  autoplot(Number)
+#bietschhorn_monday_continuous[145:288,] %>% 
+#  autoplot(Number)
 
-bietschhorn_monday_continuous[289:432,] %>% 
-  autoplot(Number)
+#bietschhorn_monday_continuous[289:432,] %>% 
+#  autoplot(Number)
 
-bietschhorn_monday_continuous[433:576,] %>% 
-  autoplot(Number)
+#bietschhorn_monday_continuous[433:576,] %>% 
+#  autoplot(Number)
 
 # Try to keep only the mondays
 bietschhorn_mondays <- bietschhorn_monday_continuous %>% 
   mutate(t = row_number()) %>% 
   update_tsibble(index = t, regular = TRUE)
 
-bietschhorn_mondays %>% 
-  autoplot(Number)
-
+# Apply ETS Model
 fit <- bietschhorn_mondays %>%
-  model(ETS(Number))
-
+  model(ETS(Number)) # Model: ETS(M,N,N) 
 fc <- fit %>%
   forecast(h = 144)
+p1 <- fc %>%
+  autoplot(bietschhorn_mondays) +
+  xlab("Timelaps per Monday") + ylab("Number of bike") +
+  ggtitle("ETS Model on Mondays")
 
-fc %>%
-  autoplot(bietschhorn_mondays)
-
+# Apply ARIMA Model
 fit <- bietschhorn_mondays %>% 
-  model(ARIMA(Number))
-
+  model(ARIMA(Number)) # ARIMA(0,1,1) 
 fc <- fit %>%
   forecast(h = 144)
+p2 <- fc %>%
+  autoplot(bietschhorn_mondays) +
+  xlab("Timelaps per Monday") + ylab("Number of bike") +
+  ggtitle("ARIMA Model on Mondays")
+p1 /p2
 
-fc %>%
-  autoplot(bietschhorn_mondays)
 ```
 
 ```{r}
@@ -300,32 +306,11 @@ blancherie %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Blancherie station")
-```
 
-
-```{r, echo=FALSE, message=FALSE}
-# Plotting from Monday till Wednesday 
-blacherie123 <- blancherie %>% 
-  filter(weekday == "Monday" |weekday == "Tuesday" | 
-           weekday == "Wednesday")
-
-# plot the data
-qplot(date, Number, data = blacherie123, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-
-# Plotting from Thursday till Sunday 
-blacherie4567 <- blancherie %>% 
-  filter(weekday == "Thursday" |weekday == "Friday" | 
-           weekday == "Saturday" | weekday == "Sunday")
-
-# plot the data
-qplot(date, Number, data = blacherie4567, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-#unique(blancherie_1[c("minutes")])
+# Sum Bikes with E-Bikes to have total column of bikes
+blancherie_ts$Blancherie <- blancherie_ts$Bike + blancherie_ts$`E-Bike`
+blancherie_ts <- blancherie_ts %>% 
+  select(date, Blancherie)
 ```
 
 #### **Cible Station**
@@ -375,31 +360,11 @@ cible %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Cible station")
-```
 
-
-```{r, echo=FALSE, message=FALSE}
-# Plotting from Monday till Wednesday 
-cible123 <- cible %>% 
-  filter(weekday == "Monday" |weekday == "Tuesday" | 
-           weekday == "Wednesday")
-
-# plot the data
-qplot(date, Number, data = cible123, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-
-# Plotting from Thursday till Sunday 
-cible4567 <- cible %>% 
-  filter(weekday == "Thursday" |weekday == "Friday" | 
-           weekday == "Saturday" | weekday == "Sunday")
-
-# plot the data
-qplot(date, Number, data = cible4567, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
+# Sum Bikes with E-Bikes to have total column of bikes
+cible_ts$Cible <- cible_ts$Bike + cible_ts$`E-Bike`
+cible_ts <- cible_ts %>% 
+  select(date, Cible)
 ```
 
 #### **Gare de Sion Sud (GSD) Station**
@@ -441,7 +406,6 @@ gsd <- gsd_ts %>%
 ```
 
 
-
 ```{r, echo=FALSE, message=FALSE}
 # Create table of Usage of the station
 gsd %>% 
@@ -449,31 +413,11 @@ gsd %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Gare de Sion Sud station")
-```
 
-
-```{r, echo=FALSE, message=FALSE}
-# Plotting from Monday till Wednesday 
-gsd123 <- gsd %>% 
-  filter(weekday == "Monday" |weekday == "Tuesday" | 
-           weekday == "Wednesday")
-
-# plot the data
-qplot(date, Number, data = gsd123, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-
-# Plotting from Thursday till Sunday 
-gsd4567 <- gsd %>% 
-  filter(weekday == "Thursday" |weekday == "Friday" | 
-           weekday == "Saturday" | weekday == "Sunday")
-
-# plot the data
-qplot(date, Number, data = gsd4567, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
+# Sum Bikes with E-Bikes to have total column of bikes
+gsd_ts$GSD <- gsd_ts$Bike + gsd_ts$`E-Bike`
+gsd_ts <- gsd_ts %>% 
+  select(date, GSD)
 ```
 
 #### **P+R Potence Station**
@@ -522,31 +466,11 @@ prp %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in P+R Potences station")
-```
 
-
-```{r, echo=FALSE, message=FALSE}
-# Plotting from Monday till Wednesday 
-prp123 <- prp %>% 
-  filter(weekday == "Monday" |weekday == "Tuesday" | 
-           weekday == "Wednesday")
-
-# plot the data
-qplot(date, Number, data = prp123, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-
-# Plotting from Thursday till Sunday 
-prp4567 <- prp %>% 
-  filter(weekday == "Thursday" |weekday == "Friday" | 
-           weekday == "Saturday" | weekday == "Sunday")
-
-# plot the data
-qplot(date, Number, data = prp4567, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
+# Sum Bikes with E-Bikes to have total column of bikes
+prp_ts$PRP <- prp_ts$Bike + prp_ts$`E-Bike`
+prp_ts <- prp_ts %>% 
+  select(date, PRP)
 ```
 
 #### **Platta Station**
@@ -595,33 +519,12 @@ platta %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Platta station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+platta_ts$Platta <- platta_ts$Bike + platta_ts$`E-Bike`
+platta_ts <- platta_ts %>% 
+  select(date, Platta)
 ```
-
-
-```{r, echo=FALSE, message=FALSE}
-# Plotting from Monday till Wednesday 
-platta123 <- platta %>% 
-  filter(weekday == "Monday" |weekday == "Tuesday" | 
-           weekday == "Wednesday")
-
-# plot the data
-qplot(date, Number, data = platta123, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-
-# Plotting from Thursday till Sunday 
-platta4567 <- platta %>% 
-  filter(weekday == "Thursday" |weekday == "Friday" | 
-           weekday == "Saturday" | weekday == "Sunday")
-
-# plot the data
-qplot(date, Number, data = platta4567, geom = "line", 
-      group = Types, colour= Types, main = "Bike usage per day", 
-      xlab = "Date [10 min]", ylab = "Number of bike") +
-  facet_grid(weekday ~ ., scale = "free_y")
-```
-
 
 #### **Planta Station**
 
@@ -669,6 +572,11 @@ planta %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Planta station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+planta_ts$Planta <- planta_ts$Bike + planta_ts$`E-Bike`
+planta_ts <- planta_ts %>% 
+  select(date, Planta)
 ```
 
 
@@ -718,6 +626,11 @@ crr %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Hôpital - CRR station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+crr_ts$CRR <- crr_ts$Bike + crr_ts$`E-Bike`
+crr_ts <- crr_ts %>% 
+  select(date, CRR)
 ```
 
 
@@ -767,6 +680,11 @@ campus %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Campus Energypolis station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+campus_ts$Campus <- campus_ts$Bike + campus_ts$`E-Bike`
+campus_ts <- campus_ts %>% 
+  select(date, Campus)
 ```
 
 #### **Scex Station**
@@ -815,6 +733,11 @@ scex %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Scex station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+scex_ts$Scex <- scex_ts$Bike + scex_ts$`E-Bike`
+scex_ts <- scex_ts %>% 
+  select(date, Scex)
 ```
 
 #### **Châteauneuf-Furet Station**
@@ -863,6 +786,11 @@ furet %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Châteauneuf-Furet station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+furet_ts$Furet <- furet_ts$Bike + furet_ts$`E-Bike`
+furet_ts <- furet_ts %>% 
+  select(date, Furet)
 ```
 
 #### **Agasse Station**
@@ -910,6 +838,11 @@ agasse %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Agasse station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+agasse_ts$Agasse <- agasse_ts$Bike + agasse_ts$`E-Bike`
+agasse_ts <- agasse_ts %>% 
+  select(date, Agasse)
 ```
 
 
@@ -958,6 +891,11 @@ stade %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in P+R Stade station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+stade_ts$Stade <- stade_ts$Bike + stade_ts$`E-Bike`
+stade_ts <- stade_ts %>% 
+  select(date, Stade)
 ```
 
 #### **Gare de Sion Nord (GSN) Station**
@@ -1005,6 +943,11 @@ gsn %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Gare de Sion Nord (GSN) station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+gsn_ts$GSN <- gsn_ts$Bike + gsn_ts$`E-Bike`
+gsn_ts <- gsn_ts %>% 
+  select(date, GSN)
 ```
 
 #### **Ancien Stand Station**
@@ -1052,6 +995,11 @@ stand %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in Ancien Stand station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+stand_ts$Stand <- stand_ts$Bike + stand_ts$`E-Bike`
+stand_ts <- stand_ts %>% 
+  select(date, Stand)
 ```
 
 #### **UNIL/UNIGE Bramois Station**
@@ -1100,5 +1048,41 @@ bramois %>%
   autoplot(Number) +
   xlab("Date [10 min]") + ylab("Number of bike") +
   ggtitle("Usage frequencies in UNIL/UNIGE Bramois station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+bramois_ts$Bramois <- bramois_ts$Bike + bramois_ts$`E-Bike`
+bramois_ts <- bramois_ts %>% 
+  select(date, Bramois)
+```
+
+### **Sion Time series**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(purrr)
+sion_ts <- list(bietschhorn_ts, blancherie_ts, cible_ts, gsd_ts, prp_ts, 
+                platta_ts, planta_ts, crr_ts, campus_ts, scex_ts, furet_ts,
+                agasse_ts, stade_ts, gsn_ts, stand_ts, bramois_ts) %>%
+  reduce(dplyr::left_join, by= "date")
+
+# Convert ts to tsibble and pivot to long format
+sion_ts_long <- sion_ts %>%   
+  gather("Bietschhorn", "Blancherie", "Cible", "GSD", "PRP", "Platta", "Planta",
+         "CRR", "Campus", "Scex", "Furet", "Agasse", "Stade", "GSN", "Stand",
+         "Bramois", key = Stations, value = Number)
+
+#$date <- as.Date(sion_ts_long$date)
+#sion_ts_long <- sion_ts_long %>%
+#  as.data.frame() %>%
+#  dplyr::group_by(date, Stations) %>%
+#  dplyr::summarise(Number = median(Number)) %>%
+#  as_tsibble(key = Stations)
+#sion_ts_long$Number <- ceiling(sion_ts_long$Number)
+```
+
+# Plot Sion stations
+```{r, echo=FALSE, message=FALSE}
+sion_ts_long %>% autoplot(Number) + ylab("Number of Bikes") +
+  facet_wrap(vars(Stations), scales = "free_y", ncol = 4) + 
+  theme(legend.position = "none")
 ```
 
