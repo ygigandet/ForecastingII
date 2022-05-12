@@ -1,0 +1,99 @@
+#### **Agasse Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Agasse <- as_tsibble(Agasse)
+weekday <- weekdays(Agasse$date)
+Agasse$weekday <- weekday # Get the weekday values
+Agasse$time <- as.POSIXct(Agasse$date, format = "%H:%M:%S %p")
+Agasse$time <- as.numeric(Agasse$date) #convert date values to numeric
+as.numeric(Agasse$time)
+
+agasse <- Agasse %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+agasse$minutes <- as.numeric(as.character(agasse$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+agasse <- agasse %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+agasse.gaps <- has_gaps(agasse)
+agasse.gaps <- scan_gaps(agasse)
+agasse <- agasse %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+agasse_ts <- agasse %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(agasse_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+agasse <- agasse_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r}
+# Time series for Wednesdays - Bike
+agasse_wednesdays_bike <- agasse %>% 
+  filter(Types == "Bike" ) %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p1 <- agasse_wednesdays_bike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - Bike - agasse") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+# Time series for Wednesdays - E-Bike
+agasse_wednesdays_ebike <- agasse %>% 
+  filter(Types == "E-Bike") %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p2 <- agasse_wednesdays_ebike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - E-Bike - agasse") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+p1 / p2
+```
+Looks like white noise
+
+```{r}
+# Is our time series stationary or not?
+agasse_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+agasse_wednesdays_bike %>% features(Number, unitroot_ndiffs) 
+
+# Convert to stationary
+agasse_wednesdays_bike <- agasse_wednesdays_bike %>% mutate(diff_number = difference(Number))
+agasse_wednesdays_bike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the Agasse?
+agasse_wednesdays_bike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+
+# Is our time series stationary or not?
+agasse_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+agasse_wednesdays_ebike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+agasse_wednesdays_ebike <- agasse_wednesdays_ebike %>% mutate(diff_number = difference(Number))
+agasse_wednesdays_ebike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the Agasse?
+agasse_wednesdays_ebike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+```
+

@@ -1,0 +1,97 @@
+#### **Platta Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Platta <- as_tsibble(Platta)
+weekday <- weekdays(Platta$date)
+Platta$weekday <- weekday # Get the weekday values
+Platta$time <- as.POSIXct(Platta$date, format = "%H:%M:%S %p")
+Platta$time <- as.numeric(Platta$date) #convert date values to numeric
+as.numeric(Platta$time)
+
+platta <- Platta %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+platta$minutes <- as.numeric(as.character(platta$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+platta <- platta %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+platta.gaps <- has_gaps(platta)
+platta.gaps <- scan_gaps(platta)
+platta <- platta %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+platta_ts <- platta %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(platta_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+platta <- platta_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r}
+# Time series for Wednesdays - Bike
+platta_wednesdays_bike <- platta %>% 
+  filter(Types == "Bike" ) %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p1 <- platta_wednesdays_bike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - Bike - Platta") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+# Time series for Wednesdays - E-Bike
+platta_wednesdays_ebike <- platta %>% 
+  filter(Types == "E-Bike") %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p2 <- platta_wednesdays_ebike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - E-Bike - Platta") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+p1 / p2
+```
+
+```{r}
+# Is our time series stationary or not?
+platta_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+platta_wednesdays_bike %>% features(Number, unitroot_ndiffs) 
+
+# Convert to stationary
+platta_wednesdays_bike <- platta_wednesdays_bike %>% mutate(diff_number = difference(Number))
+platta_wednesdays_bike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the platta?
+platta_wednesdays_bike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+
+# Is our time series stationary or not?
+platta_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+platta_wednesdays_ebike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+platta_wednesdays_ebike <- platta_wednesdays_ebike %>% mutate(diff_number = difference(Number))
+platta_wednesdays_ebike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the platta?
+platta_wednesdays_ebike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+```

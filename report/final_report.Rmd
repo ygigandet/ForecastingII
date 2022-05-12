@@ -1,0 +1,17 @@
+---
+title: "Sion - Bikesharing dataset"
+author: "Yooby Gigandet, Clarence Koehle, Jérémy Olivier, and Arturo García Luna Beltrán"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    theme:
+      bootswatch: united
+---
+<style>
+body {
+text-align: justify}
+</style>
+
+
+```{r child = c('data.Rmd', 'bietschhorn.Rmd', 'agasse.Rmd', 'blancherie.Rmd', 'bramois.Rmd', 'campus.Rmd', 'cible.Rmd', 'CRR.Rmd', 'furet.Rmd', 'GSD.Rmd', 'GSN.Rmd', 'planta.Rmd', 'platta.Rmd', 'PRP.Rmd', 'scex.Rmd', 'stade.Rmd', 'stand.Rmd')}
+```

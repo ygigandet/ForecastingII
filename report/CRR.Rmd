@@ -1,0 +1,116 @@
+#### **Hôpital - CRR Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+CRR <- as_tsibble(CRR)
+weekday <- weekdays(CRR$date)
+CRR$weekday <- weekday # Get the weekday values
+CRR$time <- as.POSIXct(CRR$date, format = "%H:%M:%S %p")
+CRR$time <- as.numeric(CRR$date) #convert date values to numeric
+as.numeric(CRR$time)
+
+crr <- CRR %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+crr$minutes <- as.numeric(as.character(crr$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+crr <- crr %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+crr.gaps <- has_gaps(crr)
+crr.gaps <- scan_gaps(crr)
+crr <- crr %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+crr_ts <- crr %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(crr_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+crr <- crr_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r}
+# Time series for Wednesdays - Bike
+crr_wednesdays_bike <- crr %>% 
+  filter(Types == "Bike" ) %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p1 <- crr_wednesdays_bike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - Bike - Hôpital CRR") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+# Time series for Wednesdays - E-Bike
+crr_wednesdays_ebike <- crr %>% 
+  filter(Types == "E-Bike") %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p2 <- crr_wednesdays_ebike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - E-Bike - Hôpital CRR") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+p1 / p2
+```
+
+```{r}
+# Is our time series stationary or not?
+crr_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+crr_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+crr_wednesdays_bike <- crr_wednesdays_bike %>% mutate(diff_number = difference(Number))
+crr_wednesdays_bike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the crr?
+crr_wednesdays_bike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+
+# Is our time series stationary or not?
+crr_wednesdays_ebike %>% features(Number, unitroot_kpss) # Y p-value > 0.05
+crr_wednesdays_ebike %>% features(Number, unitroot_ndiffs)
+
+# Is it white noise for the bike at the crr?
+crr_wednesdays_ebike %>% 
+  ACF(lag_max = 144) %>% 
+  autoplot()
+```
+
+```{r}
+# Decomposition of the trend and seasonality for e-bike
+dcmp <- crr_wednesdays_ebike %>% 
+  model(STL(Number))
+
+components(dcmp) %>% 
+  autoplot() +
+  xlab("Date [10']")
+```
+
+```{r}
+# Just removing two days and see which model forecast the best by taking the trend
+crr_wednesdays_ebike_cut <- crr_wednesdays_ebike %>% 
+  filter(date < as_date("2022-04-27 00:10:00"))
+
+crr_wednesdays_ebike_fit <- crr_wednesdays_ebike_cut %>% 
+  model(ETS = ETS(Number),
+        arima = ARIMA(Number))
+
+crr_wednesdays_ebike_fit %>% forecast(h = 288) %>% autoplot(crr_wednesdays_ebike) 
+```
+

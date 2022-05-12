@@ -1,0 +1,96 @@
+#### **P+R Potence Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+PRP <- as_tsibble(PRP)
+PRP$weekday <- weekdays(PRP$date) # Get the weekday values
+PRP$time <- as.POSIXct(PRP$date, format = "%H:%M:%S %p")
+PRP$time <- as.numeric(PRP$date) #convert date values to numeric
+as.numeric(PRP$time)
+
+prp <- PRP %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+prp$minutes <- as.numeric(as.character(prp$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+prp <- prp %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+prp.gaps <- has_gaps(prp)
+prp.gaps <- scan_gaps(prp)
+prp <- prp %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+prp_ts <- prp %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(prp_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+prp <- prp_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r}
+# Time series for Wednesdays - Bike
+prp_wednesdays_bike <- prp %>% 
+  filter(Types == "Bike" ) %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p1 <- prp_wednesdays_bike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - Bike - P+R Potence Station") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+# Time series for Wednesdays - E-Bike
+prp_wednesdays_ebike <- prp %>% 
+  filter(Types == "E-Bike") %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p2 <- prp_wednesdays_ebike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - E-Bike - P+R Potence Station") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+p1 / p2
+```
+
+```{r}
+# Is our time series stationary or not?
+prp_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+prp_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+prp_wednesdays_bike <- prp_wednesdays_bike %>% mutate(diff_number = difference(Number))
+prp_wednesdays_bike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the prp?
+prp_wednesdays_bike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+
+# Is our time series stationary or not?
+prp_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+prp_wednesdays_ebike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+prp_wednesdays_ebike <- prp_wednesdays_ebike %>% mutate(diff_number = difference(Number))
+prp_wednesdays_ebike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the prp?
+prp_wednesdays_ebike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+```

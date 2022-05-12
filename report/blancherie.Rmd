@@ -1,0 +1,113 @@
+#### **Blancherie Station **
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Blancherie <- as_tsibble(Blancherie)
+Blancherie$weekday <- weekdays(Blancherie$date) # Get the weekday values
+Blancherie$time <- as.POSIXct(Blancherie$date, format = "%H:%M:%S %p")
+Blancherie$time <- as.numeric(Blancherie$date) #convert date values to numeric
+as.numeric(Blancherie$time)
+
+blancherie <- Blancherie %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+blancherie$minutes <- as.numeric(as.character(blancherie$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+blancherie <- blancherie %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+blancherie.gaps <- has_gaps(blancherie)
+blancherie.gaps <- scan_gaps(blancherie)
+blancherie <- blancherie %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+blancherie_ts <- blancherie %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(blancherie_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+blancherie <- blancherie_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r, echo=FALSE, message=FALSE}
+# Create table of Usage of the station
+blancherie %>% 
+  select(-weekday, -minutes) %>%
+  autoplot(Number) +
+  xlab("Date [10 min]") + ylab("Number of bike") +
+  ggtitle("Usage frequencies in Blancherie station")
+
+# Sum Bikes with E-Bikes to have total column of bikes
+blancherie_ts$Blancherie <- blancherie_ts$Bike + blancherie_ts$`E-Bike`
+blancherie_ts <- blancherie_ts %>% 
+  select(date, Blancherie)
+```
+
+As we can see on the graphs below, it does not seem to have any patterns.
+```{r}
+# Time series for Wednesdays - Bike
+blancherie_wednesdays_bike <- blancherie %>% 
+  filter(Types == "Bike" ) %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p1 <- blancherie_wednesdays_bike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - Bike - Blancherie") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+# Time series for Wednesdays - E-Bike
+blancherie_wednesdays_ebike <- blancherie %>% 
+  filter(Types == "E-Bike") %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p2 <- blancherie_wednesdays_ebike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - E-Bike - Blancherie") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+p1 / p2
+```
+It looks like white noise.
+
+```{r}
+# Is our time series stationary or not?
+blancherie_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+blancherie_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+blancherie_wednesdays_bike <- blancherie_wednesdays_bike %>% mutate(diff_number = difference(Number))
+blancherie_wednesdays_bike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the Blancherie?
+blancherie_wednesdays_bike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+
+# Is our time series stationary or not?
+blancherie_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+blancherie_wednesdays_ebike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+blancherie_wednesdays_ebike <- blancherie_wednesdays_ebike %>% mutate(diff_number = difference(Number))
+blancherie_wednesdays_ebike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the Blancherie?
+blancherie_wednesdays_ebike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+```
+

@@ -1,0 +1,124 @@
+#### **Campus Energypolis Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Campus <- as_tsibble(Campus)
+weekday <- weekdays(Campus$date)
+Campus$weekday <- weekday # Get the weekday values
+Campus$time <- as.POSIXct(Campus$date, format = "%H:%M:%S %p")
+Campus$time <- as.numeric(Campus$date) #convert date values to numeric
+as.numeric(Campus$time)
+
+campus <- Campus %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+campus$minutes <- as.numeric(as.character(campus$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+campus <- campus %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+campus.gaps <- has_gaps(campus)
+campus.gaps <- scan_gaps(campus)
+campus <- campus %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+campus_ts <- campus %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(campus_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+campus <- campus_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r}
+# Time series for Wednesdays - Bike
+campus_wednesdays_bike <- campus %>% 
+  filter(Types == "Bike" ) %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p1 <- campus_wednesdays_bike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - Bike - campus") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+# Time series for Wednesdays - E-Bike
+campus_wednesdays_ebike <- campus %>% 
+  filter(Types == "E-Bike") %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p2 <- campus_wednesdays_ebike %>% 
+  autoplot() +  
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - E-Bike - campus") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+p1 / p2
+```
+
+```{r}
+# Is our time series stationary or not?
+campus_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+campus_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+campus_wednesdays_bike <- campus_wednesdays_bike %>% mutate(diff_number = difference(Number))
+campus_wednesdays_bike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the campus?
+campus_wednesdays_bike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+
+# Is our time series stationary or not?
+campus_wednesdays_ebike %>% features(Number, unitroot_kpss) # Yes p-value > 0.05
+campus_wednesdays_ebike %>% features(Number, unitroot_ndiffs)
+
+# Is it white noise for the bike at the campus?
+campus_wednesdays_ebike %>% 
+  ACF(lag_max = 144) %>% 
+  autoplot()
+```
+
+```{r}
+# Decomposition of the trend and seasonality for e-bike
+dcmp <- campus_wednesdays_ebike %>% 
+  model(STL(Number))
+
+components(dcmp) %>% 
+  autoplot() +
+  xlab("Date [10']")
+
+# Just take the trend
+campus_wednesdays_ebike_trend <- dcmp %>% 
+  components() %>% 
+  as_tsibble() %>% 
+  select(t, Types, trend)
+
+campus_wednesdays_ebike_trend %>% 
+  autoplot()
+```
+
+```{r}
+campus_wednesdays_ebike_cut <- campus_wednesdays_ebike_trend %>% 
+  slice(1:(n() - 288)) 
+
+campus_wednesdays_ebike_fit <- campus_wednesdays_ebike_cut %>% 
+  model(ETS = ETS(trend),
+        arima = ARIMA(trend))
+
+campus_wednesdays_ebike_fit %>% forecast(h = 288) %>% autoplot(campus_wednesdays_ebike_trend) 
+```
+

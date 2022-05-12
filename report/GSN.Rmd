@@ -1,0 +1,97 @@
+#### **Gare de Sion Nord (GSN) Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+GSN <- as_tsibble(GSN)
+weekday <- weekdays(GSN$date)
+GSN$weekday <- weekday # Get the weekday values
+GSN$time <- as.POSIXct(GSN$date, format = "%H:%M:%S %p")
+GSN$time <- as.numeric(GSN$date) #convert date values to numeric
+as.numeric(GSN$time)
+
+gsn <- GSN %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+gsn$minutes <- as.numeric(as.character(gsn$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+gsn <- gsn %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+gsn.gaps <- has_gaps(gsn)
+gsn.gaps <- scan_gaps(gsn)
+gsn <- gsn %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+gsn_ts <- gsn %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(gsn_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+gsn <- gsn_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r}
+# Time series for Wednesdays - Bike
+gsn_wednesdays_bike <- gsn %>% 
+  filter(Types == "Bike" ) %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p1 <- gsn_wednesdays_bike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - Bike - gsn") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+# Time series for Wednesdays - E-Bike
+gsn_wednesdays_ebike <- gsn %>% 
+  filter(Types == "E-Bike") %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p2 <- gsn_wednesdays_ebike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - E-Bike - gsn") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+p1 / p2
+```
+
+```{r}
+# Is our time series stationary or not?
+gsn_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+gsn_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+gsn_wednesdays_bike <- gsn_wednesdays_bike %>% mutate(diff_number = difference(Number))
+gsn_wednesdays_bike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the gsn?
+gsn_wednesdays_bike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+
+# Is our time series stationary or not?
+gsn_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+gsn_wednesdays_ebike %>% features(Number, unitroot_ndiffs) 
+
+# Convert to stationary
+gsn_wednesdays_ebike <- gsn_wednesdays_ebike %>% mutate(diff_number = difference(Number))
+gsn_wednesdays_ebike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the gsn?
+gsn_wednesdays_ebike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+```

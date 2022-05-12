@@ -1,0 +1,119 @@
+```{r, echo = FALSE, message = FALSE, warning=FALSE}
+source(here::here("scripts/setup.R"))
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Setting the functions to local environment "English" 
+Sys.setlocale("LC_TIME", "C")
+```
+
+#### **Sion bike sharing**
+
+Our work is to forecast the number of bikes available for every 10 minutes of Wednesday, May 25th, at every stations in the city of Sion.
+
+To do so, we first compile for each stations the number of bikes available only on Wednesdays. It will help us to gain some insights on particular trends for this day of the week.
+
+Our analysis shows us that most of the time series are white noise, except for two stations:
+
+- Campus Energypolis: e-bike
+- Hôpital - CRR: e-bike
+
+#### **Bietschhorn Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Bietschhorn <- as_tsibble(Bietschhorn)
+Bietschhorn$weekday <- weekdays(Bietschhorn$date) # Get the weekday values
+Bietschhorn$time <- as.POSIXct(Bietschhorn$date, format = "%H:%M:%S %p")
+Bietschhorn$time <- as.numeric(Bietschhorn$date) #convert date values to numeric
+as.numeric(Bietschhorn$time)
+
+bietschhorn <- Bietschhorn %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+bietschhorn$minutes <- as.numeric(as.character(bietschhorn$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+bietschhorn <- bietschhorn %>% filter(minutes == 10) %>%
+  select(-time) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+bietschhorn.gaps <- has_gaps(bietschhorn)
+bietschhorn.gaps <- scan_gaps(bietschhorn)
+bietschhorn <- bietschhorn %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+bietschhorn_ts <- bietschhorn %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes, name)
+scan_gaps(bietschhorn_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+bietschhorn <- bietschhorn_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r}
+### Time series for Wednesdays - Bike ###
+bietschhorn_wednesdays_bike <- bietschhorn %>% 
+  filter(Types == "Bike" ) %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p1 <- bietschhorn_wednesdays_bike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - Bike - Bietschhorn") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+# Time series for Wednesdays - E-Bike
+bietschhorn_wednesdays_ebike <- bietschhorn %>% 
+  filter(Types == "E-Bike") %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p2 <- bietschhorn_wednesdays_ebike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + # per day
+  ggtitle("Wednesdays time series - E-Bike - Bietschhorn") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+p1 / p2
+```
+
+
+```{r}
+# Is our time series stationary or not?
+bietschhorn_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+bietschhorn_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+bietschhorn_wednesdays_bike <- bietschhorn_wednesdays_bike %>% mutate(diff_number = difference(Number))
+bietschhorn_wednesdays_bike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the bietschhorn?
+bietschhorn_wednesdays_bike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+
+# Is our time series stationary or not?
+bietschhorn_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+bietschhorn_wednesdays_ebike %>% features(Number, unitroot_ndiffs) 
+
+# Convert to stationary
+bietschhorn_wednesdays_ebike <- bietschhorn_wednesdays_ebike %>% mutate(diff_number = difference(Number))
+bietschhorn_wednesdays_ebike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the bietschhorn?
+bietschhorn_wednesdays_ebike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+```
+
+

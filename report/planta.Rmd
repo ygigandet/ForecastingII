@@ -1,0 +1,97 @@
+#### **Planta Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Planta <- as_tsibble(Planta)
+weekday <- weekdays(Planta$date)
+Planta$weekday <- weekday # Get the weekday values
+Planta$time <- as.POSIXct(Planta$date, format = "%H:%M:%S %p")
+Planta$time <- as.numeric(Planta$date) #convert date values to numeric
+as.numeric(Planta$time)
+
+planta <- Planta %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+planta$minutes <- as.numeric(as.character(planta$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+planta <- planta %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+planta.gaps <- has_gaps(planta)
+planta.gaps <- scan_gaps(planta)
+planta <- planta %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+planta_ts <- planta %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(planta_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+planta <- planta_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r}
+# Time series for Wednesdays - Bike
+planta_wednesdays_bike <- planta %>% 
+  filter(Types == "Bike" ) %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p1 <- planta_wednesdays_bike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - Bike - Planta") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+# Time series for Wednesdays - E-Bike
+planta_wednesdays_ebike <- planta %>% 
+  filter(Types == "E-Bike") %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p2 <- planta_wednesdays_ebike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - E-Bike - Planta") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+p1 / p2
+```
+
+```{r}
+# Is our time series stationary or not?
+planta_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+planta_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+planta_wednesdays_bike <- planta_wednesdays_bike %>% mutate(diff_number = difference(Number))
+planta_wednesdays_bike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the planta?
+planta_wednesdays_bike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+
+# Is our time series stationary or not?
+planta_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+planta_wednesdays_ebike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+planta_wednesdays_ebike <- planta_wednesdays_ebike %>% mutate(diff_number = difference(Number))
+planta_wednesdays_ebike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the planta?
+planta_wednesdays_ebike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+```

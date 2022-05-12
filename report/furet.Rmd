@@ -1,0 +1,98 @@
+#### **Châteauneuf-Furet Station**
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Creation of time series
+Furet <- as_tsibble(Furet)
+weekday <- weekdays(Furet$date)
+Furet$weekday <- weekday # Get the weekday values
+Furet$time <- as.POSIXct(Furet$date, format = "%H:%M:%S %p")
+Furet$time <- as.numeric(Furet$date) #convert date values to numeric
+as.numeric(Furet$time)
+
+furet <- Furet %>% 
+  mutate(minutes = time - lag(time, default = first(time))) # subtract days
+furet$minutes <- as.numeric(as.character(furet$minutes))/60 # transform to minutes
+
+# Filter the data by time difference of 10 min
+furet <- furet %>% filter(minutes == 10) %>%
+  select(-time,-name) %>%
+  relocate(date, .before = Bike)
+
+# Identifying the gaps on the ts and fill them
+furet.gaps <- has_gaps(furet)
+furet.gaps <- scan_gaps(furet)
+furet <- furet %>% 
+  fill_gaps(.full = TRUE) 
+
+# Replace NA's values as previous row 
+furet_ts <- furet %>%
+  fill(Bike, `E-Bike`, Capacity, weekday, minutes)
+scan_gaps(furet_ts) # no missing values
+
+#  convert our data frame from wide to long format.
+furet <- furet_ts %>% 
+  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
+  relocate(Types, .before = weekday) %>%
+  relocate(Number, .before = weekday)
+```
+
+```{r}
+# Time series for Wednesdays - Bike
+furet_wednesdays_bike <- furet %>% 
+  filter(Types == "Bike" ) %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p1 <- furet_wednesdays_bike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - Bike - furet") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+# Time series for Wednesdays - E-Bike
+furet_wednesdays_ebike <- furet %>% 
+  filter(Types == "E-Bike") %>% 
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+p2 <- furet_wednesdays_ebike %>% 
+  autoplot() +
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - E-Bike - furet") +
+  labs(x = "Time [10']",
+       y = "Number")
+
+p1 / p2
+```
+Looks like white noise
+
+```{r}
+# Is our time series stationary or not?
+furet_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+furet_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+furet_wednesdays_bike <- furet_wednesdays_bike %>% mutate(diff_number = difference(Number))
+furet_wednesdays_bike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the furet?
+furet_wednesdays_bike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+
+# Is our time series stationary or not?
+furet_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
+furet_wednesdays_ebike %>% features(Number, unitroot_ndiffs)
+
+# Convert to stationary
+furet_wednesdays_ebike <- furet_wednesdays_ebike %>% mutate(diff_number = difference(Number))
+furet_wednesdays_ebike %>% autoplot(diff_number)
+
+# Is it white noise for the bike at the furet?
+furet_wednesdays_ebike %>% 
+  ACF(diff_number, lag_max = 144) %>% 
+  autoplot()
+```
