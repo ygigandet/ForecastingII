@@ -36,7 +36,26 @@ campus <- campus_ts %>%
   relocate(Number, .before = weekday)
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
+### Usage for Wednesdays - Bikes ###
+campus_wednesday <- campus %>%
+  filter(weekday == "Wednesday") 
+lubridate::day(campus_wednesday$date) <- 16
+lubridate::month(campus_wednesday$date) <- 04
+campus_wednesday <- campus_wednesday %>%
+  group_by(date, Types) %>%
+  summarise(Number = median(Number)) %>%
+  as_tsibble(key = Types) %>%
+  mutate(weekday = "Wednesday")
+campus_wednesday$Number <- ceiling(campus_wednesday$Number)
+
+campus_wednesday %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  labs(x = "Time [10']",
+       y = "Number") + 
+  ggtitle("Wednesdays Usage(Mdn) - Campus")
+
 # Time series for Wednesdays - Bike
 campus_wednesdays_bike <- campus %>% 
   filter(Types == "Bike" ) %>% 
@@ -47,7 +66,7 @@ campus_wednesdays_bike <- campus %>%
 p1 <- campus_wednesdays_bike %>% 
   autoplot() +
   geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
-  ggtitle("Wednesdays time series - Bike - campus") +
+  ggtitle("Wednesdays time series - Bike - Campus") +
   labs(x = "Time [10']",
        y = "Number")
 
@@ -61,35 +80,33 @@ campus_wednesdays_ebike <- campus %>%
 p2 <- campus_wednesdays_ebike %>% 
   autoplot() +  
   geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
-  ggtitle("Wednesdays time series - E-Bike - campus") +
+  ggtitle("Wednesdays time series - E-Bike - Campus") +
   labs(x = "Time [10']",
        y = "Number")
 
 p1 / p2
 ```
 
-```{r}
-# Is our time series stationary or not?
-campus_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
-campus_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+```{r message=FALSE, warning=FALSE}
+# Is it white noise for the bike at the campus? 
+p1 <- campus_wednesdays_bike %>% 
+  ACF(Number, lag_max = 144) %>% 
+  autoplot() +  ggtitle("Bike")
 
-# Convert to stationary
-campus_wednesdays_bike <- campus_wednesdays_bike %>% mutate(diff_number = difference(Number))
-campus_wednesdays_bike %>% autoplot(diff_number)
+# Is our time series stationary or not? #We confirm it with the test
+campus_wednesdays_bike %>% features(Number, unitroot_kpss) 
 
-# Is it white noise for the bike at the campus?
-campus_wednesdays_bike %>% 
-  ACF(diff_number, lag_max = 144) %>% 
-  autoplot()
+#The p-value of 0.01 indicates strong evidence to 
+#reject the null hypothesis of stationarity.
 
-# Is our time series stationary or not?
-campus_wednesdays_ebike %>% features(Number, unitroot_kpss) # Yes p-value > 0.05
-campus_wednesdays_ebike %>% features(Number, unitroot_ndiffs)
+# Is our time series stationary or not? #We confirm it with the test
+campus_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
 
 # Is it white noise for the bike at the campus?
-campus_wednesdays_ebike %>% 
-  ACF(lag_max = 144) %>% 
-  autoplot()
+p2 <- campus_wednesdays_ebike %>% 
+  ACF(Number, lag_max = 144) %>% 
+  autoplot() +  ggtitle("E-Bike")
+p1 / p2
 ```
 
 ```{r}
@@ -112,13 +129,13 @@ campus_wednesdays_ebike_trend %>%
 ```
 
 ```{r}
-campus_wednesdays_ebike_cut <- campus_wednesdays_ebike_trend %>% 
-  slice(1:(n() - 288)) 
+#campus_wednesdays_ebike_cut <- campus_wednesdays_ebike_trend %>% 
+#  slice(1:(n() - 288)) 
 
-campus_wednesdays_ebike_fit <- campus_wednesdays_ebike_cut %>% 
-  model(ETS = ETS(trend),
-        arima = ARIMA(trend))
+#campus_wednesdays_ebike_fit <- campus_wednesdays_ebike_cut %>% 
+#  model(ETS = ETS(trend),
+#        arima = ARIMA(trend))
 
-campus_wednesdays_ebike_fit %>% forecast(h = 288) %>% autoplot(campus_wednesdays_ebike_trend) 
+#campus_wednesdays_ebike_fit %>% forecast(h = 288) %>% #autoplot(campus_wednesdays_ebike_trend) 
 ```
 

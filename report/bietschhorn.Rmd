@@ -15,12 +15,26 @@ To do so, we first compile for each stations the number of bikes available only 
 
 Our analysis shows us that most of the time series are white noise, except for two stations:
 
-- Campus Energypolis: e-bike
-- Hôpital - CRR: e-bike
+* Campus Energypolis: e-bike
+* Hôpital - CRR: e-bike
+
+Most of the stations show a pattern between the hours from 06:00 to 12:00, where the amount of bikes decrease and then increase from 12:00 to 18:00. There are special cases in which those patterns are at the inverse, those signs could be related by the location of this stations, and the purpose of their users. 
+
+* **Stations that Increase - Decrease** 
+    + Campus Energypolis 
+    + Hôpital - CRR 
+    + Gare de Sion Sud 
+    + Gare de Sion Nord (E-Bike)
+    
+* **Stations that Decrease - Increase** 
+    + Bietschhorn 
+    + Platta (E-Bike)
+    + P+R Potence
+    + Ancien Stand (E-Bike)
 
 #### **Bietschhorn Station**
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r, message=FALSE, warning=FALSE, include=FALSE}
 # Creation of time series
 Bietschhorn <- as_tsibble(Bietschhorn)
 Bietschhorn$weekday <- weekdays(Bietschhorn$date) # Get the weekday values
@@ -55,7 +69,26 @@ bietschhorn <- bietschhorn_ts %>%
   relocate(Number, .before = weekday)
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
+### Usage for Wednesdays - Bikes ###
+bietschhorn_wednesday <- bietschhorn %>%
+  filter(weekday == "Wednesday") 
+lubridate::day(bietschhorn_wednesday$date) <- 16
+lubridate::month(bietschhorn_wednesday$date) <- 04
+bietschhorn_wednesday <- bietschhorn_wednesday %>%
+  group_by(date, Types) %>%
+  summarise(Number = median(Number)) %>%
+  as_tsibble(key = Types) %>%
+  mutate(weekday = "Wednesday")
+bietschhorn_wednesday$Number <- ceiling(bietschhorn_wednesday$Number)
+
+bietschhorn_wednesday %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  labs(x = "Time [10']",
+       y = "Number") + 
+  ggtitle("Wednesdays Usage(Mdn) - Bietschhorn")
+
 ### Time series for Wednesdays - Bike ###
 bietschhorn_wednesdays_bike <- bietschhorn %>% 
   filter(Types == "Bike" ) %>% 
@@ -64,7 +97,7 @@ bietschhorn_wednesdays_bike <- bietschhorn %>%
   update_tsibble(index = t, regular = TRUE)
 
 p1 <- bietschhorn_wednesdays_bike %>% 
-  autoplot() +
+  autoplot(Number) +
   geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
   ggtitle("Wednesdays time series - Bike - Bietschhorn") +
   labs(x = "Time [10']",
@@ -78,42 +111,35 @@ bietschhorn_wednesdays_ebike <- bietschhorn %>%
   update_tsibble(index = t, regular = TRUE)
 
 p2 <- bietschhorn_wednesdays_ebike %>% 
-  autoplot() +
+  autoplot(Number) +
   geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + # per day
   ggtitle("Wednesdays time series - E-Bike - Bietschhorn") +
   labs(x = "Time [10']",
        y = "Number")
-
 p1 / p2
 ```
 
 
-```{r}
-# Is our time series stationary or not?
-bietschhorn_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
-bietschhorn_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+```{r message=FALSE, warning=FALSE}
+# Is it white noise for the bike at the bietschhorn? 
+p1 <- bietschhorn_wednesdays_bike %>% 
+  ACF(Number, lag_max = 144) %>% 
+  autoplot() +  ggtitle("Bike")
 
-# Convert to stationary
-bietschhorn_wednesdays_bike <- bietschhorn_wednesdays_bike %>% mutate(diff_number = difference(Number))
-bietschhorn_wednesdays_bike %>% autoplot(diff_number)
+# Is our time series stationary or not? #We confirm it with the test
+bietschhorn_wednesdays_bike %>% features(Number, unitroot_kpss) 
 
-# Is it white noise for the bike at the bietschhorn?
-bietschhorn_wednesdays_bike %>% 
-  ACF(diff_number, lag_max = 144) %>% 
-  autoplot()
+#The p-value of 0.01 indicates strong evidence to 
+#reject the null hypothesis of stationarity.
 
-# Is our time series stationary or not?
+# Is our time series stationary or not? #We confirm it with the test
 bietschhorn_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
-bietschhorn_wednesdays_ebike %>% features(Number, unitroot_ndiffs) 
-
-# Convert to stationary
-bietschhorn_wednesdays_ebike <- bietschhorn_wednesdays_ebike %>% mutate(diff_number = difference(Number))
-bietschhorn_wednesdays_ebike %>% autoplot(diff_number)
 
 # Is it white noise for the bike at the bietschhorn?
-bietschhorn_wednesdays_ebike %>% 
-  ACF(diff_number, lag_max = 144) %>% 
-  autoplot()
+p2 <- bietschhorn_wednesdays_ebike %>% 
+  ACF(Number, lag_max = 144) %>% 
+  autoplot() +  ggtitle("E-Bike")
+p1 / p2
 ```
 
 

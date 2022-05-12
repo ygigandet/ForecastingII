@@ -37,7 +37,26 @@ bramois <- bramois_ts %>%
   relocate(Number, .before = weekday)
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
+### Usage for Wednesdays - Bikes ###
+bramois_wednesday <- bramois %>%
+  filter(weekday == "Wednesday") 
+lubridate::day(bramois_wednesday$date) <- 16
+lubridate::month(bramois_wednesday$date) <- 04
+bramois_wednesday <- bramois_wednesday %>%
+  group_by(date, Types) %>%
+  summarise(Number = median(Number)) %>%
+  as_tsibble(key = Types) %>%
+  mutate(weekday = "Wednesday")
+bramois_wednesday$Number <- ceiling(bramois_wednesday$Number)
+
+bramois_wednesday %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  labs(x = "Time [10']",
+       y = "Number") + 
+  ggtitle("Wednesdays Usage(Mdn) - Bramois")
+
 # Time series for Wednesdays - Bike
 bramois_wednesdays_bike <- bramois %>% 
   filter(Types == "Bike" ) %>% 
@@ -46,7 +65,7 @@ bramois_wednesdays_bike <- bramois %>%
   update_tsibble(index = t, regular = TRUE)
 
 p1 <- bramois_wednesdays_bike %>% 
-  autoplot() +
+  autoplot(Number) +
   geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
   ggtitle("Wednesdays time series - Bike - bramois") +
   labs(x = "Time [10']",
@@ -60,7 +79,7 @@ bramois_wednesdays_ebike <- bramois %>%
   update_tsibble(index = t, regular = TRUE)
 
 p2 <- bramois_wednesdays_ebike %>% 
-  autoplot() +
+  autoplot(Number) +
   geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
   ggtitle("Wednesdays time series - E-Bike - bramois") +
   labs(x = "Time [10']",
@@ -69,32 +88,25 @@ p2 <- bramois_wednesdays_ebike %>%
 p1 / p2
 ```
 
-Again, looks like white noise, but maybe not for ebike, let's see
 
-```{r}
-# Is our time series stationary or not?
-bramois_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
-bramois_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+```{r message=FALSE, warning=FALSE}
+# Is it white noise for the bike at the bramois? 
+p1 <- bramois_wednesdays_bike %>% 
+  ACF(Number, lag_max = 144) %>% 
+  autoplot() +  ggtitle("Bike")
 
-# Convert to stationary
-bramois_wednesdays_bike <- bramois_wednesdays_bike %>% mutate(diff_number = difference(Number))
-bramois_wednesdays_bike %>% autoplot(diff_number)
+# Is our time series stationary or not? #We confirm it with the test
+bramois_wednesdays_bike %>% features(Number, unitroot_kpss) 
 
-# Is it white noise for the bike at the bramois?
-bramois_wednesdays_bike %>% 
-  ACF(diff_number, lag_max = 144) %>% 
-  autoplot()
+#The p-value of 0.01 indicates strong evidence to 
+#reject the null hypothesis of stationarity.
 
-# Is our time series stationary or not?
+# Is our time series stationary or not? #We confirm it with the test
 bramois_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
-bramois_wednesdays_ebike %>% features(Number, unitroot_ndiffs)
-
-# Convert to stationary
-bramois_wednesdays_ebike <- bramois_wednesdays_ebike %>% mutate(diff_number = difference(Number))
-bramois_wednesdays_ebike %>% autoplot(diff_number)
 
 # Is it white noise for the bike at the bramois?
-bramois_wednesdays_ebike %>% 
-  ACF(diff_number, lag_max = 144) %>% 
-  autoplot()
+p2 <- bramois_wednesdays_ebike %>% 
+  ACF(Number, lag_max = 144) %>% 
+  autoplot() +  ggtitle("E-Bike")
+p1 / p2
 ```

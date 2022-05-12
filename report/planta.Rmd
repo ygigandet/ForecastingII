@@ -36,7 +36,26 @@ planta <- planta_ts %>%
   relocate(Number, .before = weekday)
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
+### Usage for Wednesdays - Bikes ###
+planta_wednesday <- planta %>%
+  filter(weekday == "Wednesday") 
+lubridate::day(planta_wednesday$date) <- 16
+lubridate::month(planta_wednesday$date) <- 04
+planta_wednesday <- planta_wednesday %>%
+  group_by(date, Types) %>%
+  summarise(Number = median(Number)) %>%
+  as_tsibble(key = Types) %>%
+  mutate(weekday = "Wednesday")
+planta_wednesday$Number <- ceiling(planta_wednesday$Number)
+
+planta_wednesday %>% 
+  select(-weekday) %>%
+  autoplot(Number) +
+  labs(x = "Time [10']",
+       y = "Number") + 
+  ggtitle("Wednesdays Usage(Mdn) - Planta")
+
 # Time series for Wednesdays - Bike
 planta_wednesdays_bike <- planta %>% 
   filter(Types == "Bike" ) %>% 
@@ -45,7 +64,7 @@ planta_wednesdays_bike <- planta %>%
   update_tsibble(index = t, regular = TRUE)
 
 p1 <- planta_wednesdays_bike %>% 
-  autoplot() +
+  autoplot(Number) +
   geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
   ggtitle("Wednesdays time series - Bike - Planta") +
   labs(x = "Time [10']",
@@ -59,7 +78,7 @@ planta_wednesdays_ebike <- planta %>%
   update_tsibble(index = t, regular = TRUE)
 
 p2 <- planta_wednesdays_ebike %>% 
-  autoplot() +
+  autoplot(Number) +
   geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
   ggtitle("Wednesdays time series - E-Bike - Planta") +
   labs(x = "Time [10']",
@@ -68,30 +87,24 @@ p2 <- planta_wednesdays_ebike %>%
 p1 / p2
 ```
 
-```{r}
-# Is our time series stationary or not?
-planta_wednesdays_bike %>% features(Number, unitroot_kpss) # No p-value < 0.05
-planta_wednesdays_bike %>% features(Number, unitroot_ndiffs)
+```{r message=FALSE, warning=FALSE}
+# Is it white noise for the bike at the planta? 
+p1 <- planta_wednesdays_bike %>% 
+  ACF(Number, lag_max = 144) %>% 
+  autoplot() +  ggtitle("Bike")
 
-# Convert to stationary
-planta_wednesdays_bike <- planta_wednesdays_bike %>% mutate(diff_number = difference(Number))
-planta_wednesdays_bike %>% autoplot(diff_number)
+# Is our time series stationary or not? #We confirm it with the test
+planta_wednesdays_bike %>% features(Number, unitroot_kpss) 
 
-# Is it white noise for the bike at the planta?
-planta_wednesdays_bike %>% 
-  ACF(diff_number, lag_max = 144) %>% 
-  autoplot()
+#The p-value of 0.01 indicates strong evidence to 
+#reject the null hypothesis of stationarity.
 
-# Is our time series stationary or not?
+# Is our time series stationary or not? #We confirm it with the test
 planta_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
-planta_wednesdays_ebike %>% features(Number, unitroot_ndiffs)
-
-# Convert to stationary
-planta_wednesdays_ebike <- planta_wednesdays_ebike %>% mutate(diff_number = difference(Number))
-planta_wednesdays_ebike %>% autoplot(diff_number)
 
 # Is it white noise for the bike at the planta?
-planta_wednesdays_ebike %>% 
-  ACF(diff_number, lag_max = 144) %>% 
-  autoplot()
+p2 <- planta_wednesdays_ebike %>% 
+  ACF(Number, lag_max = 144) %>% 
+  autoplot() +  ggtitle("E-Bike")
+p1 / p2
 ```
