@@ -15,3 +15,43 @@ text-align: justify}
 
 ```{r child = c('data.Rmd', 'bietschhorn.Rmd', 'agasse.Rmd', 'blancherie.Rmd', 'bramois.Rmd', 'campus.Rmd', 'cible.Rmd', 'CRR.Rmd', 'furet.Rmd', 'GSD.Rmd', 'GSN.Rmd', 'planta.Rmd', 'platta.Rmd', 'PRP.Rmd', 'scex.Rmd', 'stade.Rmd', 'stand.Rmd')}
 ```
+
+> Considerations for the Project 1 
+
+Your hand-in should consist of a PDF report, the code used (you may combine both with Rmarkdown if
+you wish) and an Excel or CSV file giving the forecasts. For every station and 10-minute increment.
+Please follow the steps below for your analysis:
+    
+    
+## 1. Exploration and Visualization
+To better understand the data, you might want to visualize it first. By doing so, you will be able to discuss the features of your data. This part should not be longer than 2 pages.
+
+## 2. Cleaning and Wrangling
+Your data will probably require some preliminary transformations before being able to work on it. This includes, but is not limited to, dealing with missing values (sometimes the values are measured every 10 minutes, sometimes every 30 minutes), detecting and treating outliers, creating new variables, etc. 
+
+## 3. Modeling
+This part is about building on your knowledge of time series techniques to model your data. You can investigate various models but you should justify in your report your choices regarding these. Pay attention to the conditions that are needed to apply a specific model.Treat also carefully seasonality, outliers, colinearity, covariates, special events, etc.
+
+Remember the following steps:
+(a) Aggregation choice for hierarchical time series
+(b) Model building
+(c) Model selection
+
+## 4. Forecast and Validation
+This part is about using the models selected in 3. to produce the most accurate forecast of the day Wednesday May 25th. You m a y try to compare different models using different scoring methods.
+
+
+## 5. Limits and Discussion
+Please discuss your results in an objective view, indicating
+potential improvements, issues and concerns, etc.
+
+>  Scientific report
+
+– No more than 5 pages.
+– Evaluation - Clarity: you should explain every choice you made along the process of
+model building and forecasting.
+
+> Forecast Table
+
+– Submit a table of your forecast. The document must contain 4 columns containing the
+name of the station, time (ranging from 0
