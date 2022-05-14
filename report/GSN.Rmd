@@ -88,7 +88,7 @@ p2 <- gsn_wednesdays_ebike %>%
 p1 / p2
 ```
 
-The E-Bike after lag 50 show some patterns of white noise, but we can discard stationary because the test rejects the null hipotesis
+The E-Bike after lag 50 show some patterns of white noise, but we can discard stationary because the test rejects the null hypothesis
 
 ```{r message=FALSE, warning=FALSE}
 # Is it white noise for the bike at the gsn? 

@@ -13,11 +13,6 @@ Our work is to forecast the number of bikes available for every 10 minutes of We
 
 To do so, we first compile for each stations the number of bikes available only on Wednesdays. It will help us to gain some insights on particular trends for this day of the week.
 
-Our analysis shows us that most of the time series are white noise, except for two stations:
-
-* Campus Energypolis: e-bike
-* Hôpital - CRR: e-bike
-
 Most of the stations show a pattern between the hours from 06:00 to 12:00, where the amount of bikes decrease and then increase from 12:00 to 18:00. There are special cases in which those patterns are at the inverse, those signs could be related by the location of this stations, and the purpose of their users. 
 
 * **Stations that Increase - Decrease** 

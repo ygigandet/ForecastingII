@@ -306,15 +306,15 @@ sion_ebike_long <- sion_ebike %>%
 ########### Plot Them ################
 
 sion_bike_long %>% autoplot(Number) + ylab("Number of Bikes") +
-  facet_wrap(vars(Stations), scales = "free_y", ncol = 4) + 
-  theme(legend.position = "none") + guides(x =  guide_axis(angle = 20)) +
+  facet_wrap(vars(Stations), ncol = 4) + 
+  theme(legend.position = "none") + guides(x =  guide_axis(angle = 25)) +
   labs(x = "Time [10']",
        y = "Number") +
   ggtitle("Wednesdays Usage(Mdn) - Bike - Sion Stations")
 
 sion_ebike_long %>% autoplot(Number) + ylab("Number of Bikes") +
-  facet_wrap(vars(Stations), scales = "free_y", ncol = 4) + 
-  theme(legend.position = "none") + guides(x =  guide_axis(angle = 20)) +
+  facet_wrap(vars(Stations), ncol = 4) + 
+  theme(legend.position = "none") + guides(x =  guide_axis(angle = 25)) +
   labs(x = "Time [10']",
        y = "Number") +
   ggtitle("Wednesdays Usage(Mdn) - E-Bike - Sion Stations")
