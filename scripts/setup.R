@@ -11,7 +11,8 @@ packages <- c(
   "GGally", "ggcorrplot", "DataExplorer", "inspectdf", # for plotting
   "knitr", "kableExtra", "bookdown", "rmarkdown", "bslib",  # for the report
   "olsrr", "psych", "stargazer", "DT", "Hmisc", "psych",  # for the analysis
-  "fpp3", "tsibbledata", "readxl", "reshape2", "patchwork" # fot time series
+  "fpp3", "tsibbledata", "readxl", "reshape2", "patchwork", # fot time series
+  "readxl" # read files
 )
 purrr::walk(packages, library, character.only = TRUE) 
 

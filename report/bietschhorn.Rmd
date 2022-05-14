@@ -112,9 +112,8 @@ p2 <- bietschhorn_wednesdays_ebike %>%
   ggtitle("Wednesdays time series - E-Bike - Bietschhorn") +
   labs(x = "Time [10']",
        y = "Number")
-p1 / p2
+p1 / p2 
 ```
-
 
 ```{r message=FALSE, warning=FALSE}
 # Is it white noise for the bike at the bietschhorn? 
@@ -137,5 +136,88 @@ p2 <- bietschhorn_wednesdays_ebike %>%
   autoplot() +  ggtitle("E-Bike")
 p1 / p2
 ```
+
+#### **Forecast**
+
+> **Bike**
+
+```{r, message=FALSE, warning=FALSE}
+############################################################################################
+                                      ###   Forecast  ###
+############################################################################################
+
+# Forecast for Bike in Bietschhorn
+fit <- bietschhorn_wednesdays_bike[1:1062,] %>%
+  model(ETS = ETS(Number),
+        ARIMA = ARIMA(Number),
+        TSLM = TSLM(Number ~ trend())) %>%
+  mutate(Combinatiion = (ETS + ARIMA + TSLM) / 3)
+fc <- fit %>% forecast(h = 144)
+fc %>% autoplot(bietschhorn_wednesdays_bike, level = NULL) +
+  guides(colour=guide_legend(title = "Models")) +
+  ggtitle("Wednesday Forecast - Bike - Bietschhorn") +
+  labs(x = "Time [10']",
+       y = "Number") 
+
+# Compare models and arrange by RMSE to select the best
+fc %>% accuracy(bietschhorn_wednesdays_bike) %>% arrange(RMSE)
+
+
+###################################   Linear Regression   ###############################
+
+# Prepare data for Forecast
+tslm <- bietschhorn_ts %>%
+  dplyr::left_join(weather_data, by = "date") %>%
+  na.omit() %>%
+  filter(weekday == "Wednesday") %>%
+  mutate(t = row_number()) %>% 
+  update_tsibble(index = t, regular = TRUE)
+
+######## Build the model for Bike #######
+
+tslm_model_bike <- tslm[1:1008,] %>% 
+  model(TSLM = TSLM(Bike ~ Air_Temperature + Precipitation +
+                      Virtual_Temperature + Wind_Speed))
+
+# Look at the Coefficients and Residuals
+report(tslm_model_bike)
+tslm_model_bike %>% gg_tsresiduals()
+```
+
+> **E-Bike**
+
+```{r, message=FALSE, warning=FALSE}
+# Forecast for E-Bike in Bietschhorn
+fit <- bietschhorn_wednesdays_ebike[1:1062,] %>%
+  model(ETS = ETS(Number),
+        ARIMA = ARIMA(Number),
+        TSLM = TSLM(Number ~ trend())) %>%
+  mutate(Combinatiion = (ETS + ARIMA) / 2)
+fc <- fit %>% forecast(h = 144)
+fc %>% autoplot(bietschhorn_wednesdays_ebike, level = NULL) +
+  guides(colour=guide_legend(title = "Models")) +
+  ggtitle("Wednesday Forecast - E-Bike - Bietschhorn") +
+  labs(x = "Time [10']",
+       y = "Number") 
+
+
+# Compare models and arrange by RMSE to select the best
+fc %>% accuracy(bietschhorn_wednesdays_ebike) %>% arrange(RMSE)
+
+###################################   Linear Regression   ###############################
+
+######## Build the model for eBike #######
+
+tslm_model_ebike <- tslm[1:1008,] %>% 
+  model(TSLM = TSLM(`E-Bike` ~ Air_Temperature + Precipitation +
+                      Virtual_Temperature + Wind_Speed))
+
+# Look at the Coefficients and Residuals
+report(tslm_model_ebike)
+tslm_model_ebike %>% gg_tsresiduals()
+```
+
+
+
 
 

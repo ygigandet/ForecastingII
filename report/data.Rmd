@@ -23,5 +23,19 @@ Stade <- read_csv("Stade_csv")
 GSN <- read_csv("GSN_csv")
 Stand <- read_csv("Stand_csv")
 Bramois <- read_csv("Bramois_csv")
+
+# Get Weather data
+weather_data <- read_excel("weather_data.xlsx")
+cols.num <- c("tre200s0","rre150g0", "rre150z0", "tvi200s0", "fkl010z0", "fu3010z0")
+weather_data[cols.num] <- sapply(weather_data[cols.num],as.numeric)
+weather_data$time <- as_datetime(weather_data$time)
+weather_data <- as_tsibble(weather_data, index = time) 
+weather_data <- weather_data %>%
+  select(-stn,-rre150g0, -fkl010z0) %>%
+  rename(Air_Temperature = "tre200s0",
+         Precipitation = "rre150z0",
+         Virtual_Temperature = "tvi200s0", 
+         Wind_Speed = "fu3010z0",
+         date = "time") 
 ```
 
