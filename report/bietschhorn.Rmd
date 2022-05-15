@@ -151,7 +151,7 @@ fit <- bietschhorn_wednesdays_bike[1:1062,] %>%
   model(ETS = ETS(Number),
         ARIMA = ARIMA(Number),
         TSLM = TSLM(Number ~ trend())) %>%
-  mutate(Combinatiion = (ETS + ARIMA + TSLM) / 3)
+  mutate(Combination = (ETS + ARIMA + TSLM) / 3)
 fc <- fit %>% forecast(h = 144)
 fc %>% autoplot(bietschhorn_wednesdays_bike, level = NULL) +
   guides(colour=guide_legend(title = "Models")) +
@@ -217,6 +217,30 @@ report(tslm_model_ebike)
 tslm_model_ebike %>% gg_tsresiduals()
 ```
 
+```{r}
+#### Forecast for the 2022-05-04
+
+# Keep only weather information for this time
+weather_scenario <- weather_data %>% 
+  filter(as_date(date) == as_date('2022-05-04'))
+
+# Create a scenario based on the inputs of weather
+scenario <- new_data(bietschhorn_wednesdays_bike, n = 144) %>% 
+  mutate(Air_Temperature=weather_scenario$Air_Temperature,
+         Precipitation=weather_scenario$Precipitation,
+         Virtual_Temperature=weather_scenario$Virtual_Temperature,
+         Wind_speed=weather_scenario$Wind_Speed)
+
+# TSLM model
+tslm_model_bike <- bietschhorn_wednesdays_bike %>% 
+  model(TSLM = TSLM(Number ~ Air_Temperature + Precipitation +
+                      Virtual_Temperature + Wind_Speed))
+
+fc_scenario <- fabletools::forecast(tslm_model_bike, new_data = scenario)
+
+bietschhorn_wednesdays_bike %>% autoplot(Number) +
+  autolayer(fc_scenario, level = 0)
+```
 
 
 
