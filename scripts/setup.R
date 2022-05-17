@@ -8,11 +8,11 @@ packages <- c(
   "tidyverse", "lubridate", "car", "tidyquant", # for wrangling
   "ggrepel", "gghighlight", "patchwork", "maps", "scales", "RColorBrewer",
   "cowplot", "plotly", "dygraphs", "xts", "highcharter", "ggthemes", "corrplot",
-  "GGally", "ggcorrplot", "DataExplorer", "inspectdf", "leaflet", "magrittr",
-  # for plotting
+  "GGally", "ggcorrplot", "DataExplorer", "inspectdf","leaflet", 
+  "magrittr", # for plotting
   "knitr", "kableExtra", "bookdown", "rmarkdown", "bslib",  # for the report
-  "olsrr", "psych", "stargazer", "DT", "Hmisc", "psych",  # for the analysis
-  "fpp3", "tsibbledata", "readxl", "reshape2", "patchwork", # for time series
+  "psych", "stargazer", "DT", "Hmisc", "psych",  # for the analysis
+  "fpp3", "tsibbledata", "readxl", "reshape2", "patchwork", # fot time series
   "readxl" # read files
 )
 purrr::walk(packages, library, character.only = TRUE) 
@@ -48,4 +48,3 @@ opts_chunk$set(
   message = FALSE,
   echo = FALSE
 )
-
