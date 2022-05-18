@@ -8,7 +8,8 @@ packages <- c(
   "tidyverse", "lubridate", "car", "tidyquant", # for wrangling
   "ggrepel", "gghighlight", "patchwork", "maps", "scales", "RColorBrewer",
   "cowplot", "plotly", "dygraphs", "xts", "highcharter", "ggthemes", "corrplot",
-  "GGally", "ggcorrplot", "DataExplorer", "inspectdf", # for plotting
+  "GGally", "ggcorrplot", "DataExplorer", "inspectdf","leaflet", 
+  "magrittr", # for plotting
   "knitr", "kableExtra", "bookdown", "rmarkdown", "bslib",  # for the report
   "psych", "stargazer", "DT", "Hmisc", "psych",  # for the analysis
   "fpp3", "tsibbledata", "readxl", "reshape2", "patchwork", # fot time series
@@ -47,4 +48,3 @@ opts_chunk$set(
   message = FALSE,
   echo = FALSE
 )
-

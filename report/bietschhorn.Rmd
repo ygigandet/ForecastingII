@@ -258,7 +258,3 @@ tslm %>%
   autoplot(Bike) +
   autolayer(fc, level = 0)
 ```
-
-
-
-
