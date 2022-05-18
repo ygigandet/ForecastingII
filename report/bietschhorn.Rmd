@@ -30,94 +30,20 @@ Most of the stations show a pattern between the hours from 06:00 to 12:00, where
 
 #### **Bietschhorn Station**
 
-```{r, message=FALSE, warning=FALSE, include=FALSE}
-# Creation of time series
-Bietschhorn <- as_tsibble(Bietschhorn)
-Bietschhorn$weekday <- weekdays(Bietschhorn$date) # Get the weekday values
-Bietschhorn$time <- as.POSIXct(Bietschhorn$date, format = "%H:%M:%S %p")
-Bietschhorn$time <- as.numeric(Bietschhorn$date) #convert date values to numeric
-as.numeric(Bietschhorn$time)
-
-bietschhorn <- Bietschhorn %>% 
-  mutate(minutes = time - lag(time, default = first(time))) # subtract days
-bietschhorn$minutes <- as.numeric(as.character(bietschhorn$minutes))/60 # transform to minutes
-
-# Filter the data by time difference of 10 min
-bietschhorn <- bietschhorn %>% filter(minutes == 10) %>%
-  select(-time) %>%
-  relocate(date, .before = Bike)
-
-# Identifying the gaps on the ts and fill them
-bietschhorn.gaps <- has_gaps(bietschhorn)
-bietschhorn.gaps <- scan_gaps(bietschhorn)
-bietschhorn <- bietschhorn %>% 
-  fill_gaps(.full = TRUE) 
-
-# Replace NA's values as previous row 
-bietschhorn_ts <- bietschhorn %>%
-  fill(Bike, `E-Bike`, Capacity, weekday, minutes, name)
-scan_gaps(bietschhorn_ts) # no missing values
-
-#  convert our data frame from wide to long format.
-bietschhorn <- bietschhorn_ts %>% 
-  gather("Bike", "E-Bike", "Capacity", key = Types, value = Number) %>%
-  relocate(Types, .before = weekday) %>%
-  relocate(Number, .before = weekday)
-```
-
 ```{r, message=FALSE, warning=FALSE}
-### Usage for Wednesdays - Bikes ###
-bietschhorn_wednesday <- bietschhorn %>%
-  filter(weekday == "Wednesday") 
-lubridate::day(bietschhorn_wednesday$date) <- 16
-lubridate::month(bietschhorn_wednesday$date) <- 04
-bietschhorn_wednesday <- bietschhorn_wednesday %>%
-  group_by(date, Types) %>%
-  summarise(Number = median(Number)) %>%
-  as_tsibble(key = Types) %>%
-  mutate(weekday = "Wednesday")
-bietschhorn_wednesday$Number <- ceiling(bietschhorn_wednesday$Number)
-
-bietschhorn_wednesday %>% 
-  select(-weekday) %>%
-  autoplot(Number) +
-  labs(x = "Time [10']",
-       y = "Number") + 
-  ggtitle("Wednesdays Usage(Mdn) - Bietschhorn")
-
-### Time series for Wednesdays - Bike ###
-bietschhorn_wednesdays_bike <- bietschhorn %>% 
-  filter(Types == "Bike" ) %>% 
-  filter(weekday == "Wednesday") %>%
-  mutate(t = row_number()) %>% 
-  update_tsibble(index = t, regular = TRUE)
-
-p1 <- bietschhorn_wednesdays_bike %>% 
+### Time series for Wednesdays - Bikes ###
+bietschhorn_wednesdays_bikes %>% 
   autoplot(Number) +
   geom_vline(xintercept=c(54,198,342,486,630,774,918,1062,1206), linetype="dotted") + #Per day
   ggtitle("Wednesdays time series - Bike - Bietschhorn") +
   labs(x = "Time [10']",
        y = "Number")
 
-# Time series for Wednesdays - E-Bike
-bietschhorn_wednesdays_ebike <- bietschhorn %>% 
-  filter(Types == "E-Bike") %>% 
-  filter(weekday == "Wednesday") %>%
-  mutate(t = row_number()) %>% 
-  update_tsibble(index = t, regular = TRUE)
-
-p2 <- bietschhorn_wednesdays_ebike %>% 
-  autoplot(Number) +
-  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062,1206), linetype="dotted") + # per day
-  ggtitle("Wednesdays time series - E-Bike - Bietschhorn") +
-  labs(x = "Time [10']",
-       y = "Number")
-p1 / p2 
 ```
 
 ```{r message=FALSE, warning=FALSE}
 # Is it white noise for the bike at the bietschhorn? 
-p1 <- bietschhorn_wednesdays_bike %>% 
+bietschhorn_wednesdays_bikes %>% 
   ACF(Number, lag_max = 144) %>% 
   autoplot() +  ggtitle("Bike")
 
@@ -127,14 +53,6 @@ bietschhorn_wednesdays_bike %>% features(Number, unitroot_kpss)
 #The p-value of 0.01 indicates strong evidence to 
 #reject the null hypothesis of stationarity.
 
-# Is our time series stationary or not? #We confirm it with the test
-bietschhorn_wednesdays_ebike %>% features(Number, unitroot_kpss) # No p-value < 0.05
-
-# Is it white noise for the bike at the bietschhorn?
-p2 <- bietschhorn_wednesdays_ebike %>% 
-  ACF(Number, lag_max = 144) %>% 
-  autoplot() +  ggtitle("E-Bike")
-p1 / p2
 ```
 
 #### **Forecast**
@@ -147,20 +65,20 @@ p1 / p2
 ############################################################################################
 
 # Forecast for Bike in Bietschhorn
-fit <- bietschhorn_wednesdays_bike[1:1062,] %>%
+fit <- bietschhorn_wednesdays_bikes[1:1062,] %>%
   model(ETS = ETS(Number),
         ARIMA = ARIMA(Number),
         TSLM = TSLM(Number ~ trend())) %>%
   mutate(Combination = (ETS + ARIMA + TSLM) / 3)
 fc <- fit %>% forecast(h = 144)
-fc %>% autoplot(bietschhorn_wednesdays_bike, level = NULL) +
+fc %>% autoplot(bietschhorn_wednesdays_bikes, level = NULL) +
   guides(colour=guide_legend(title = "Models")) +
   ggtitle("Wednesday Forecast - Bike - Bietschhorn") +
   labs(x = "Time [10']",
        y = "Number") 
 
 # Compare models and arrange by RMSE to select the best
-fc %>% accuracy(bietschhorn_wednesdays_bike) %>% arrange(RMSE)
+fc %>% accuracy(bietschhorn_wednesdays_bikes) %>% arrange(RMSE)
 
 
 ###################################   Linear Regression   ###############################
@@ -176,45 +94,12 @@ tslm <- bietschhorn_ts %>%
 ######## Build the model for Bike #######
 
 tslm_model_bike <- tslm[1:1008,] %>% 
-  model(TSLM = TSLM(Bike ~ Air_Temperature + Precipitation +
+  model(TSLM = TSLM(Bikes ~ Air_Temperature + Precipitation +
                       Virtual_Temperature + Wind_Speed))
 
 # Look at the Coefficients and Residuals
 report(tslm_model_bike)
 tslm_model_bike %>% gg_tsresiduals()
-```
-
-> **E-Bike**
-
-```{r, message=FALSE, warning=FALSE}
-# Forecast for E-Bike in Bietschhorn
-fit <- bietschhorn_wednesdays_ebike[1:1062,] %>%
-  model(ETS = ETS(Number),
-        ARIMA = ARIMA(Number),
-        TSLM = TSLM(Number ~ trend())) %>%
-  mutate(Combinatiion = (ETS + ARIMA) / 2)
-fc <- fit %>% forecast(h = 144)
-fc %>% autoplot(bietschhorn_wednesdays_ebike, level = NULL) +
-  guides(colour=guide_legend(title = "Models")) +
-  ggtitle("Wednesday Forecast - E-Bike - Bietschhorn") +
-  labs(x = "Time [10']",
-       y = "Number") 
-
-
-# Compare models and arrange by RMSE to select the best
-fc %>% accuracy(bietschhorn_wednesdays_ebike) %>% arrange(RMSE)
-
-###################################   Linear Regression   ###############################
-
-######## Build the model for eBike #######
-
-tslm_model_ebike <- tslm[1:1008,] %>% 
-  model(TSLM = TSLM(`E-Bike` ~ Air_Temperature + Precipitation +
-                      Virtual_Temperature + Wind_Speed))
-
-# Look at the Coefficients and Residuals
-report(tslm_model_ebike)
-tslm_model_ebike %>% gg_tsresiduals()
 ```
 
 #### Forecasting ####
@@ -224,7 +109,7 @@ tslm_model_ebike %>% gg_tsresiduals()
 
 # Parameters for the forecast
 day_forecasted = '2022-05-04'
-station = bietschhorn_wednesdays_bike
+station = bietschhorn_wednesdays_bikes
 
 gsd_wednesdays_bike_fc <- station %>% 
   filter(as_date(date) < as_date(day_forecasted))
@@ -240,7 +125,7 @@ fc <- fit %>% forecast(h = 144)
 
 fc %>% autoplot(gsd_wednesdays_bike_fc, level = NULL) +
   guides(colour=guide_legend(title = "Models")) +
-  ggtitle("Wednesday Forecast - Bike - Bietschhorn") +
+  ggtitle("Wednesday Forecast - Bikes - Bietschhorn") +
   labs(x = "Time [10']",
        y = "Number") 
 
@@ -283,17 +168,17 @@ scenario <- new_data(tslm_forecast, n = 144) %>%
 
 # TSLM model
 tslm_model_bike <- tslm_forecast %>% 
-  model(TSLM = TSLM(Bike ~ Air_Temperature + Precipitation +
+  model(TSLM = TSLM(Bikes ~ Air_Temperature + Precipitation +
                       Virtual_Temperature + Wind_Speed))
 
 fc <- forecast(tslm_model_bike, new_data = scenario) %>% 
-  as_fable(response = "Bike")
+  as_fable(response = "Bikes")
 
 tslm_forecast %>% 
-  autoplot(Bike) +
+  autoplot(Bikes) +
   autolayer(fc, level = 0)
 
 tslm %>% 
   filter(as_date(date) <= as_date(day_forecasted)) %>% 
-  autoplot(Bike)
+  autoplot(Bikes)
 ```
