@@ -94,7 +94,7 @@ bietschhorn_wednesdays_bike <- bietschhorn %>%
 
 p1 <- bietschhorn_wednesdays_bike %>% 
   autoplot(Number) +
-  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + #Per day
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062,1206), linetype="dotted") + #Per day
   ggtitle("Wednesdays time series - Bike - Bietschhorn") +
   labs(x = "Time [10']",
        y = "Number")
@@ -108,7 +108,7 @@ bietschhorn_wednesdays_ebike <- bietschhorn %>%
 
 p2 <- bietschhorn_wednesdays_ebike %>% 
   autoplot(Number) +
-  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062), linetype="dotted") + # per day
+  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062,1206), linetype="dotted") + # per day
   ggtitle("Wednesdays time series - E-Bike - Bietschhorn") +
   labs(x = "Time [10']",
        y = "Number")
