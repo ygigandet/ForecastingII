@@ -58,131 +58,87 @@ Bramois <- as_tsibble(Bramois, index = date)
   
 ############ Prepare data ################
 
-bietschhorn_bike <- Bietschhorn %>%
-  rename(Bietschhorn = Bike) %>%
-  select(date, Bietschhorn)
-bietschhorn_ebike <- Bietschhorn %>%
-  rename(Bietschhorn = `E-Bike`) %>%
+bietschhorn_bike <- Bietschhorn
+bietschhorn_bike$Bietschhorn <- bietschhorn_bike$Bike + bietschhorn_bike$`E-Bike`
+bietschhorn_bike <- bietschhorn_bike %>%
   select(date, Bietschhorn)
 
-blancherie_bike <- Blancherie %>%
-  rename(Blancherie = Bike) %>%
-  select(date, Blancherie)
-blancherie_ebike <- Blancherie %>%
-  rename(Blancherie = `E-Bike`) %>%
+blancherie_bike <- Blancherie
+blancherie_bike$Blancherie <- blancherie_bike$Bike + blancherie_bike$`E-Bike`
+blancherie_bike <- blancherie_bike %>%
   select(date, Blancherie)
 
-cible_bike <- Cible %>%
-  rename(Cible = Bike) %>%
-  select(date, Cible)
-cible_ebike <- Cible %>%
-  rename(Cible = `E-Bike`) %>%
+cible_bike <- Cible
+cible_bike$Cible <- cible_bike$Bike + cible_bike$`E-Bike`
+cible_bike <- cible_bike %>%
   select(date, Cible)
 
-gsd_bike <- GSD %>%
-  rename(GSD = Bike) %>%
-  select(date, GSD)
-gsd_ebike <- GSD %>%
-  rename(GSD = `E-Bike`) %>%
+gsd_bike <- GSD
+gsd_bike$GSD <- gsd_bike$Bike + gsd_bike$`E-Bike`
+gsd_bike <- gsd_bike %>%
   select(date, GSD)
 
-
-prp_bike <- PRP %>%
-  rename(PRP = Bike) %>%
-  select(date, PRP)
-prp_ebike <- PRP %>%
-  rename(PRP = `E-Bike`) %>%
+prp_bike <- PRP
+prp_bike$PRP <- prp_bike$Bike + prp_bike$`E-Bike`
+prp_bike <- prp_bike %>%
   select(date, PRP)
 
-
-platta_bike <- Platta %>%
-  rename(Platta = Bike) %>%
-  select(date, Platta)
-platta_ebike <- Platta %>%
-  rename(Platta = `E-Bike`) %>%
+platta_bike <- Platta
+platta_bike$Platta <- platta_bike$Bike + platta_bike$`E-Bike`
+platta_bike <- platta_bike %>%
   select(date, Platta)
 
-
-planta_bike <- Planta %>%
-  rename(Planta = Bike) %>%
-  select(date, Planta)
-planta_ebike <- Planta %>%
-  rename(Planta = `E-Bike`) %>%
+planta_bike <- Planta
+planta_bike$Planta <- planta_bike$Bike + planta_bike$`E-Bike`
+planta_bike <- planta_bike %>%
   select(date, Planta)
 
-
-crr_bike <- CRR %>%
-  rename(CRR = Bike) %>%
-  select(date, CRR)
-crr_ebike <- CRR %>%
-  rename(CRR = `E-Bike`) %>%
+crr_bike <- CRR
+crr_bike$CRR <- crr_bike$Bike + crr_bike$`E-Bike`
+crr_bike <- crr_bike %>%
   select(date, CRR)
 
-
-campus_bike <- Campus %>%
-  rename(Campus = Bike) %>%
-  select(date, Campus)
-campus_ebike <- Campus %>%
-  rename(Campus = `E-Bike`) %>%
+campus_bike <- Campus
+campus_bike$Campus <- campus_bike$Bike + campus_bike$`E-Bike`
+campus_bike <- campus_bike %>%
   select(date, Campus)
 
-
-scex_bike <- Scex %>%
-  rename(Scex = Bike) %>%
-  select(date, Scex)
-scex_ebike <- Scex %>%
-  rename(Scex = `E-Bike`) %>%
+scex_bike <- Scex
+scex_bike$Scex <- scex_bike$Bike + scex_bike$`E-Bike`
+scex_bike <- scex_bike %>%
   select(date, Scex)
 
-
-furet_bike <- Furet %>%
-  rename(Furet = Bike) %>%
-  select(date, Furet)
-furet_ebike <- Furet %>%
-  rename(Furet = `E-Bike`) %>%
+furet_bike <- Furet
+furet_bike$Furet <- furet_bike$Bike + furet_bike$`E-Bike`
+furet_bike <- furet_bike %>%
   select(date, Furet)
 
-
-agasse_bike <- Agasse %>%
-  rename(Agasse = Bike) %>%
-  select(date, Agasse)
-agasse_ebike <- Agasse %>%
-  rename(Agasse = `E-Bike`) %>%
+agasse_bike <- Agasse
+agasse_bike$Agasse <- agasse_bike$Bike + agasse_bike$`E-Bike`
+agasse_bike <- agasse_bike %>%
   select(date, Agasse)
 
-
-stade_bike <- Stade %>%
-  rename(Stade = Bike) %>%
-  select(date, Stade)
-stade_ebike <- Stade %>%
-  rename(Stade = `E-Bike`) %>%
+stade_bike <- Stade
+stade_bike$Stade <- stade_bike$Bike + stade_bike$`E-Bike`
+stade_bike <- stade_bike %>%
   select(date, Stade)
 
-
-gsn_bike <- GSN %>%
-  rename(GSN = Bike) %>%
-  select(date, GSN)
-gsn_ebike <- GSN %>%
-  rename(GSN = `E-Bike`) %>%
+gsn_bike <- GSN
+gsn_bike$GSN <- gsn_bike$Bike + gsn_bike$`E-Bike`
+gsn_bike <- gsn_bike %>%
   select(date, GSN)
 
-
-stand_bike <- Stand %>%
-  rename(Stand = Bike) %>%
-  select(date, Stand)
-stand_ebike <- Stand %>%
-  rename(Stand = `E-Bike`) %>%
+stand_bike <- Stand
+stand_bike$Stand <- stand_bike$Bike + stand_bike$`E-Bike`
+stand_bike <- stand_bike %>%
   select(date, Stand)
 
-
-bramois_bike <- Bramois %>%
-  rename(Bramois = Bike) %>%
-  select(date, Bramois)
-bramois_ebike <- Bramois %>%
-  rename(Bramois = `E-Bike`) %>%
+bramois_bike <- Bramois
+bramois_bike$Bramois <- bramois_bike$Bike + bramois_bike$`E-Bike`
+bramois_bike <- bramois_bike %>%
   select(date, Bramois)
 
-################# Create Master tables #####################
+################# Create Master table #####################
 
 library(purrr)
 sion_bike <- list(bietschhorn_bike, blancherie_bike, cible_bike, gsd_bike, prp_bike, 
@@ -190,23 +146,11 @@ sion_bike <- list(bietschhorn_bike, blancherie_bike, cible_bike, gsd_bike, prp_b
                 agasse_bike, stade_bike, gsn_bike, stand_bike, bramois_bike) %>%
   reduce(dplyr::left_join, by= "date")
 
-sion_ebike <- list(bietschhorn_ebike, blancherie_ebike, cible_ebike, gsd_ebike, 
-                  prp_ebike, platta_ebike, planta_ebike, crr_ebike, campus_ebike,
-                  scex_ebike, furet_ebike, agasse_ebike, stade_ebike, gsn_ebike,
-                  stand_ebike, bramois_ebike) %>%
-  reduce(dplyr::left_join, by= "date")
-
 # Convert ts to tsibble and pivot to long format
 sion_bike_long <- sion_bike %>%   
   gather("Bietschhorn", "Blancherie", "Cible", "GSD", "PRP", "Platta", "Planta",
          "CRR", "Campus", "Scex", "Furet", "Agasse", "Stade", "GSN", "Stand",
          "Bramois", key = Stations, value = Number)
-
-sion_ebike_long <- sion_ebike %>%   
-  gather("Bietschhorn", "Blancherie", "Cible", "GSD", "PRP", "Platta", "Planta",
-         "CRR", "Campus", "Scex", "Furet", "Agasse", "Stade", "GSN", "Stand",
-         "Bramois", key = Stations, value = Number)
-
 
 sion_bike_diff<- sion_bike
 sion_bike_diff$time <- as.POSIXct(sion_bike_diff$date, format = "%H:%M:%S %p")
@@ -231,7 +175,15 @@ In order to observe the availability of Bikes at each station from the past week
 ```{r, echo=FALSE, message=FALSE, heigth= }
 x<-inspect_num(sion_bike_table)
 show_plot(x, col_palette=3, plot_layout = c(4, 4)) +
-  ggtitle("Bike Probability per Station")
+  ggtitle("Bike Probability per Station") + xlim(0, 25)+ylim(0.00, 0.25)
+
+
+sion_bike_long %>% autoplot(Number) + ylab("Number of Bikes") +
+  facet_wrap(vars(Stations), ncol = 4) + 
+  theme(legend.position = "none") + guides(x =  guide_axis(angle = 25)) +
+  labs(x = "Time [10']",
+       y = "Number") +
+  ggtitle("Wednesdays Usage(Mdn) - Bikes - Sion Stations")
 ```
 
 <br> From these graphs, we could observe the patterns as follow:
