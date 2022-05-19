@@ -32,12 +32,17 @@ Most of the stations show a pattern between the hours from 06:00 to 12:00, where
 
 ```{r, message=FALSE, warning=FALSE}
 ### Time series for Wednesdays - Bikes ###
+
+# Parameters
+interval = 1206
+
+# Plot the time series for every wednesdays
 bietschhorn_wednesdays_bikes %>% 
   autoplot(Number) +
-  geom_vline(xintercept=c(54,198,342,486,630,774,918,1062,1206), linetype="dotted") + #Per day
-  ggtitle("Wednesdays time series - Bike - Bietschhorn") +
+  geom_vline(xintercept=seq(54, interval, 144), linetype="dotted") + #Per day
+  ggtitle("Wednesdays time series - Bietschhorn") +
   labs(x = "Time [10']",
-       y = "Number")
+       y = "Number of bikes available")
 
 ```
 
@@ -48,7 +53,7 @@ bietschhorn_wednesdays_bikes %>%
   autoplot() +  ggtitle("Bike")
 
 # Is our time series stationary or not? #We confirm it with the test
-bietschhorn_wednesdays_bike %>% features(Number, unitroot_kpss) 
+bietschhorn_wednesdays_bikes %>% features(Number, unitroot_kpss) 
 
 #The p-value of 0.01 indicates strong evidence to 
 #reject the null hypothesis of stationarity.
@@ -57,6 +62,7 @@ bietschhorn_wednesdays_bike %>% features(Number, unitroot_kpss)
 
 #### **Forecast**
 
+
 > **Bike**
 
 ```{r, message=FALSE, warning=FALSE}
@@ -64,16 +70,17 @@ bietschhorn_wednesdays_bike %>% features(Number, unitroot_kpss)
                                       ###   Forecast  ###
 ############################################################################################
 
-# Forecast for Bike in Bietschhorn
-fit <- bietschhorn_wednesdays_bikes[1:1062,] %>%
+# Forecast for bikes in Bietschhorn
+fit <- bietschhorn_wednesdays_bikes[1:interval,] %>%
   model(ETS = ETS(Number),
-        ARIMA = ARIMA(Number),
-        TSLM = TSLM(Number ~ trend())) %>%
-  mutate(Combination = (ETS + ARIMA + TSLM) / 3)
+        ARIMA = ARIMA(Number)) %>%
+  mutate(Combination = (ETS + ARIMA) / 2)
+
 fc <- fit %>% forecast(h = 144)
+
 fc %>% autoplot(bietschhorn_wednesdays_bikes, level = NULL) +
   guides(colour=guide_legend(title = "Models")) +
-  ggtitle("Wednesday Forecast - Bike - Bietschhorn") +
+  ggtitle("Forecast bikes - Bietschhorn") +
   labs(x = "Time [10']",
        y = "Number") 
 
@@ -90,6 +97,8 @@ tslm <- bietschhorn_ts %>%
   filter(weekday == "Wednesday") %>%
   mutate(t = row_number()) %>% 
   update_tsibble(index = t, regular = TRUE)
+
+#
 
 ######## Build the model for Bike #######
 
@@ -111,11 +120,11 @@ tslm_model_bike %>% gg_tsresiduals()
 day_forecasted = '2022-05-04'
 station = bietschhorn_wednesdays_bikes
 
-gsd_wednesdays_bike_fc <- station %>% 
+bietschhorn_wednesdays_bikes_fc <- station %>% 
   filter(as_date(date) < as_date(day_forecasted))
 
 # Model with ETS and ARIMA
-fit <- gsd_wednesdays_bike_fc %>%
+fit <- bietschhorn_wednesdays_bikes_fc %>%
   model(NAIVE = NAIVE(Number),
         ETS = ETS(Number),
         ARIMA = ARIMA(Number)) %>%
@@ -123,7 +132,7 @@ fit <- gsd_wednesdays_bike_fc %>%
 
 fc <- fit %>% forecast(h = 144)
 
-fc %>% autoplot(gsd_wednesdays_bike_fc, level = NULL) +
+fc %>% autoplot(bietschhorn_wednesdays_bikes_fc, level = NULL) +
   guides(colour=guide_legend(title = "Models")) +
   ggtitle("Wednesday Forecast - Bikes - Bietschhorn") +
   labs(x = "Time [10']",
@@ -134,7 +143,7 @@ station %>%
   autoplot(Number)
 
 # Compare models and arrange by RMSE to select the best
-fc %>% accuracy(gsd_wednesdays_bike_fc) %>% arrange(RMSE)
+fc %>% accuracy(bietschhorn_wednesdays_bikes_fc) %>% arrange(RMSE)
 ```
 
 ```{r}
@@ -167,11 +176,11 @@ scenario <- new_data(tslm_forecast, n = 144) %>%
          Wind_Speed=weather_scenario$Wind_Speed)
 
 # TSLM model
-tslm_model_bike <- tslm_forecast %>% 
+tslm_model_bikes <- tslm_forecast %>% 
   model(TSLM = TSLM(Bikes ~ Air_Temperature + Precipitation +
                       Virtual_Temperature + Wind_Speed))
 
-fc <- forecast(tslm_model_bike, new_data = scenario) %>% 
+fc <- forecast(tslm_model_bikes, new_data = scenario) %>% 
   as_fable(response = "Bikes")
 
 tslm_forecast %>% 
