@@ -115,9 +115,35 @@ tslm %>%
 
 # Look at the Coefficients and Residuals
 report(tslm_model_bikes)
-tslm_model_bike %>% gg_tsresiduals()
+tslm_model_bikes %>% gg_tsresiduals()
 
 fc %>% accuracy(station) %>% arrange(RMSE)
+```
+
+
+```{r}
+######################## Visualization of all the models ############################ 
+
+# Build the combination of all the models
+fit2 <- tslm[1:interval_fc,] %>%
+  model(ARIMA = ARIMA(Number),
+        TSLM = TSLM(Number ~ Air_Temperature + Precipitation +
+                      Virtual_Temperature + Wind_Speed)) %>%
+  mutate(Combination = (ARIMA + TSLM) / 2)
+
+fc2 <- forecast(fit2, new_data = scenario) %>% 
+  as_fable(response = "Number")
+
+#Plot together both graphs to see the pattern
+fc2 %>% autoplot(tslm, level=NULL) +
+  guides(colour=guide_legend(title = "Models")) +
+  ggtitle("Forecast bikes - Bietschhorn") +
+  labs(x = "Time [10']",
+       y = "Number") 
+
+# Compare the scores of the models to find the best one
+fc2 %>% accuracy(station) %>% arrange(RMSE)
+
 ```
 
 #### **Blancherie Station**
