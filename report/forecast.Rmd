@@ -5,7 +5,7 @@
 
 # The time interval of our time series - the latest one would be 1350
 interval = 1295 # interval for all wednesdays
-day_forecasted = '2022-05-11'
+day_forecasted = '2022-04-27'
 ```
 
 #### **Bietschhorn Station**
@@ -2123,8 +2123,6 @@ fc <- forecast(tslm_model_bikes, new_data = scenario) %>%
 fc %>% autoplot(station, level = NULL)
 
 # Look at the Coefficients and Residuals
-report(tslm_model_bikes)
-tslm_model_bikes %>% gg_tsresiduals()
 
 fc %>% accuracy(station) %>% arrange(RMSE)
 
