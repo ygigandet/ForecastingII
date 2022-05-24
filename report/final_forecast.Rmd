@@ -3,8 +3,8 @@
 ```{r}
 # Parameters for all forecasts
 
-# The time interval of our time series - the latest one would be 1350
-interval = 1295 # interval for all wednesdays
+# The time interval of our time series
+interval = 1439 # interval for all wednesdays
 day_forecasted = '2022-05-25'
 ```
 
@@ -107,6 +107,13 @@ forecast_final[,2] <- subset(fc2_upper, select = upper)
 forecast_final <- forecast_final %>% 
   rename('Bietschhorn' = '.mean',
          'Bietschhorn - upper' = 'upper')
+
+# Forecast just combination
+fc2_chosen %>% autoplot(tslm, level = NULL) +
+  guides(colour=guide_legend(title = "Models")) +
+  ggtitle("Forecast bikes - Bietschhorn") +
+  labs(x = "Time [10']",
+       y = "Number") 
 ```
 
 #### **Blancherie Station**
@@ -1593,3 +1600,10 @@ forecast_final <- forecast_final %>%
   rename('Stand' = '.mean',
          'Stand - upper' = 'upper')
 ```
+
+```{r}
+setwd(here::here("data/"))
+
+write_xlsx(forecast_final, "forecast_final")
+```
+
