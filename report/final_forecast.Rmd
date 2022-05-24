@@ -1604,6 +1604,6 @@ forecast_final <- forecast_final %>%
 ```{r}
 setwd(here::here("data/"))
 
-write_xlsx(forecast_final, "forecast_final")
+write_csv(forecast_final, "forecast_final")
 ```
 
